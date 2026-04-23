@@ -1,0 +1,1486 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Vicky Park · AI Leadership Portfolio</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --font-serif: 'Playfair Display', 'Georgia', 'Times New Roman', serif;
+  --font-sans: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-mono: 'DM Mono', 'SF Mono', 'Fira Code', 'Consolas', monospace;
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+html { scroll-behavior:smooth; }
+body { font-family:'DM Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif; background:#f4efe6; color:#0d0d0d; overflow-x:hidden; }
+
+/* NAV */
+nav {
+  position:fixed; top:0; left:0; right:0; z-index:200;
+  padding:1rem 3rem;
+  display:flex; justify-content:space-between; align-items:center;
+  background:rgba(244,239,230,0.94); backdrop-filter:blur(16px);
+  border-bottom:1px solid rgba(13,13,13,0.1);
+}
+.nav-name { font-family:'Playfair Display','Georgia','Times New Roman',serif; font-size:1.05rem; font-weight:700; }
+.nav-links { display:flex; gap:1.75rem; list-style:none; }
+.nav-links a { font-size:0.74rem; font-weight:500; letter-spacing:0.1em; text-transform:uppercase; color:#788492; text-decoration:none; transition:color 0.2s; }
+.nav-links a:hover { color:#0d0d0d; }
+
+/* HERO */
+.hero {
+  height:100vh; min-height:680px; display:grid; grid-template-columns:1fr 1fr;
+  padding-top:60px; overflow:hidden;
+}
+.hero-left { padding:8rem 4rem 6rem 5rem; display:flex; flex-direction:column; justify-content:center; }
+.eyebrow {
+  font-family:'DM Mono','SF Mono','Fira Code','Consolas',monospace; font-size:0.7rem; letter-spacing:0.2em; text-transform:uppercase;
+  color:#1b6b6b; margin-bottom:1.5rem; display:flex; align-items:center; gap:0.75rem;
+}
+.eyebrow::before { content:''; width:2rem; height:1px; background:#1b6b6b; }
+.hero-title { font-family:'Playfair Display','Georgia','Times New Roman',serif; font-size:clamp(2.8rem,4.5vw,5rem); font-weight:900; line-height:1.0; margin-bottom:1.75rem; }
+.hero-title em { font-style:italic; color:#1b6b6b; }
+.hero-sub { font-size:1rem; line-height:1.75; color:#3c4f5c; max-width:460px; margin-bottom:3rem; }
+.hero-stats { display:flex; gap:2.5rem; }
+.stat-n { font-family:'Playfair Display','Georgia','Times New Roman',serif; font-size:2.2rem; font-weight:900; line-height:1; }
+.stat-l { font-size:0.7rem; letter-spacing:0.08em; text-transform:uppercase; color:#788492; margin-top:0.25rem; }
+
+/* HERO RIGHT — BACKGROUND PANEL */
+.hero-right {
+  background:#0d0d0d; position:relative; display:flex; align-items:center; justify-content:center; overflow:hidden;
+}
+.hero-grid {
+  position:absolute; inset:0;
+  background-image:linear-gradient(rgba(197,151,58,0.12) 1px,transparent 1px),linear-gradient(90deg,rgba(197,151,58,0.12) 1px,transparent 1px);
+  background-size:40px 40px;
+}
+.bg-panel { position:relative; z-index:2; width:340px; }
+.bg-panel-eyebrow {
+  font-family:'DM Mono','SF Mono','Consolas',monospace;
+  font-size:0.6rem; letter-spacing:0.22em; text-transform:uppercase;
+  color:#c5973a; margin-bottom:1.5rem;
+  display:flex; align-items:center; gap:0.6rem;
+}
+.bg-panel-eyebrow::before { content:''; width:1.5rem; height:1px; background:#c5973a; }
+.bg-company { margin-bottom:0.9rem; }
+.bg-co-badge { display:inline-flex; align-items:center; gap:0.5rem; border-radius:8px; padding:0.4rem 0.85rem; margin-bottom:0.45rem; }
+.bg-co-name { font-family:'DM Sans',-apple-system,sans-serif; font-size:0.75rem; font-weight:700; letter-spacing:0.04em; }
+.bg-co-sub { font-size:0.65rem; font-weight:400; opacity:0.65; }
+.bg-co-role { font-size:0.68rem; color:rgba(255,255,255,0.38); font-family:'DM Mono',monospace; margin-bottom:0.4rem; }
+.bg-co-chips { display:flex; flex-wrap:wrap; gap:0.3rem; }
+.bg-chip { font-size:0.6rem; font-weight:500; padding:0.18rem 0.55rem; border-radius:100px; border:1px solid rgba(255,255,255,0.1); color:rgba(255,255,255,0.45); }
+.bg-rule { height:1px; background:rgba(197,151,58,0.15); margin:0.9rem 0; }
+.bg-expertise-label { font-family:'DM Mono',monospace; font-size:0.6rem; letter-spacing:0.18em; text-transform:uppercase; color:rgba(255,255,255,0.25); margin-bottom:0.75rem; }
+.bg-exp-chips { display:flex; flex-wrap:wrap; gap:0.4rem; }
+.bg-exp-chip { font-size:0.67rem; font-weight:500; padding:0.28rem 0.75rem; border-radius:100px; background:rgba(197,151,58,0.1); border:1px solid rgba(197,151,58,0.25); color:rgba(197,151,58,0.9); }
+
+/* IMPACT STRIP */
+.impact-strip {
+  background:#1b6b6b; color:#fff; padding:3.5rem 5rem;
+  display:grid; grid-template-columns:repeat(5,1fr); gap:1.5rem; text-align:center;
+}
+.is-num { font-family:'Playfair Display','Georgia','Times New Roman',serif; font-size:2.6rem; font-weight:900; line-height:1; }
+.is-label { font-size:0.74rem; color:rgba(255,255,255,0.65); line-height:1.5; margin-top:0.3rem; }
+
+/* SECTIONS */
+section { padding:6rem 5rem; }
+.sec-header { display:flex; align-items:baseline; gap:1.25rem; margin-bottom:3.5rem; }
+.sec-num { font-family:'DM Mono','SF Mono','Fira Code','Consolas',monospace; font-size:0.7rem; color:#788492; letter-spacing:0.1em; }
+.sec-title { font-family:'Playfair Display','Georgia','Times New Roman',serif; font-size:2.6rem; font-weight:900; }
+.sec-title span { color:#1b6b6b; font-style:italic; }
+.sec-desc { margin-left:3rem; font-size:0.88rem; line-height:1.75; color:#788492; max-width:520px; margin-bottom:3rem; }
+
+/* DASHBOARD SECTION */
+.dashboards-section { background:#0d0d0d; padding:7rem 5rem; }
+.dashboards-section .sec-title { color:#fff; }
+.dashboards-section .sec-title span { color:#c5973a; }
+.dashboards-section .sec-num { color:rgba(255,255,255,0.3); }
+.dashboards-section .sec-desc { color:rgba(255,255,255,0.5); }
+
+/* Tab instruction */
+.dash-instruction {
+  margin-left:3rem; margin-bottom:1.25rem;
+  display:flex; align-items:center; gap:0.75rem;
+  font-family:'DM Mono',monospace; font-size:0.64rem; letter-spacing:0.12em; text-transform:uppercase;
+  color:rgba(255,255,255,0.25);
+}
+.dash-instruction-arrow {
+  display:inline-flex; align-items:center; gap:0.3rem;
+  color:#c5973a; font-size:0.75rem; animation:pulse-arrow 2s ease-in-out infinite;
+}
+@keyframes pulse-arrow { 0%,100%{opacity:1;transform:translateX(0)} 50%{opacity:0.6;transform:translateX(3px)} }
+
+.dash-tabs { display:flex; gap:0.75rem; margin-bottom:2rem; flex-wrap:wrap; margin-left:3rem; }
+.dash-tab {
+  padding:0.65rem 1.4rem; border-radius:8px; border:1px solid rgba(255,255,255,0.15);
+  background:transparent; color:rgba(255,255,255,0.5); cursor:pointer;
+  font-family:'DM Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif; font-size:0.82rem; font-weight:500;
+  transition:all 0.2s; display:flex; align-items:center; gap:0.5rem;
+  position:relative;
+}
+.dash-tab:hover { border-color:rgba(197,151,58,0.5); color:rgba(255,255,255,0.8); background:rgba(197,151,58,0.05); }
+.dash-tab.active { background:rgba(197,151,58,0.15); border-color:#c5973a; color:#fff; }
+.dash-tab .dot { width:7px; height:7px; border-radius:50%; }
+.dash-tab.active .dot { animation:blink-dot 2s ease-in-out infinite; }
+@keyframes blink-dot { 0%,100%{opacity:1} 50%{opacity:0.4} }
+
+.dash-context { margin-left:3rem; margin-bottom:1.75rem; display:none; }
+.dash-context.active { display:block; }
+.dash-context-inner {
+  background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08);
+  border-radius:10px; padding:1.25rem 1.5rem;
+  display:flex; gap:2rem; align-items:flex-start;
+}
+.dc-label { font-family:'DM Mono','SF Mono','Fira Code','Consolas',monospace; font-size:0.65rem; letter-spacing:0.15em; text-transform:uppercase; color:#c5973a; margin-bottom:0.4rem; }
+.dc-desc { font-size:0.82rem; color:rgba(255,255,255,0.55); line-height:1.65; }
+.dc-tags { display:flex; flex-wrap:wrap; gap:0.4rem; margin-top:0.75rem; }
+.dc-tag { font-size:0.68rem; padding:0.2rem 0.65rem; border-radius:100px; border:1px solid rgba(255,255,255,0.15); color:rgba(255,255,255,0.4); }
+
+.dash-frame-wrap {
+  border-radius:14px; overflow:hidden;
+  border:1px solid rgba(255,255,255,0.08);
+  box-shadow:0 40px 100px rgba(0,0,0,0.5);
+  display:none;
+}
+.dash-frame-wrap.active { display:block; }
+.dash-frame-header {
+  background:#1a1a1a; padding:0.7rem 1rem;
+  display:flex; align-items:center; gap:0.5rem;
+  border-bottom:1px solid rgba(255,255,255,0.06);
+}
+.wdot { width:10px; height:10px; border-radius:50%; }
+.wd-r{background:#ff5f57;} .wd-y{background:#febc2e;} .wd-g{background:#28c840;}
+.frame-url { font-family:'DM Mono','SF Mono','Fira Code','Consolas',monospace; font-size:0.68rem; color:rgba(255,255,255,0.25); margin-left:0.5rem; }
+.dash-iframe-wrap-inner { overflow:hidden; height:660px; }
+.dash-iframe { width:133.4%; height:880px; transform:scale(0.75); transform-origin:top left; border:none; background:#fff; display:block; }
+
+/* CUSTOMER GRID */
+.proj-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:1.5px; background:rgba(13,13,13,0.1); border:1px solid rgba(13,13,13,0.1); border-radius:14px; overflow:hidden; }
+.proj-card { background:#f4efe6; padding:2.25rem 1.875rem; transition:background 0.25s; position:relative; overflow:hidden; }
+.proj-card:hover { background:#ffffff; }
+.proj-type { font-family:'DM Mono','SF Mono','Fira Code','Consolas',monospace; font-size:0.6rem; letter-spacing:0.18em; text-transform:uppercase; color:#1b6b6b; margin-bottom:0.9rem; display:flex; align-items:center; gap:0.4rem; }
+.proj-type::before { content:''; display:inline-block; width:5px; height:5px; border-radius:50%; background:#1b6b6b; }
+.proj-name { font-family:'Playfair Display','Georgia','Times New Roman',serif; font-size:1.15rem; font-weight:700; line-height:1.3; margin-bottom:0.7rem; }
+.proj-desc { font-size:0.82rem; line-height:1.65; color:#3c4f5c; }
+.proj-impact { margin-top:1.1rem; padding-top:1.1rem; border-top:1px solid rgba(13,13,13,0.1); font-size:0.76rem; color:#1b6b6b; display:flex; gap:0.4rem; }
+.proj-impact::before { content:'→'; flex-shrink:0; }
+.proj-date { font-family:'DM Mono','SF Mono','Fira Code','Consolas',monospace; font-size:0.6rem; color:#788492; margin-top:0.85rem; }
+
+/* ENABLEMENT */
+.enable-section { background:#ede7db; }
+.enable-cards-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:1.5rem; }
+.en-card { background:#ffffff; border:1px solid rgba(13,13,13,0.1); border-radius:16px; overflow:hidden; transition:transform 0.3s, box-shadow 0.3s; display:flex; flex-direction:column; }
+.en-card:hover { transform:translateY(-5px); box-shadow:0 20px 50px rgba(0,0,0,0.09); }
+.en-card-accent { height:4px; }
+.en-card-body { padding:2rem; flex:1; }
+.en-card-tag { font-family:'DM Mono','SF Mono','Consolas',monospace; font-size:0.6rem; letter-spacing:0.18em; text-transform:uppercase; color:#1b6b6b; margin-bottom:0.75rem; display:flex; align-items:center; gap:0.4rem; }
+.en-card-tag::before { content:''; width:1rem; height:1px; background:#1b6b6b; }
+.en-card-title { font-family:'Playfair Display','Georgia','Times New Roman',serif; font-size:1.15rem; font-weight:700; line-height:1.3; margin-bottom:0.65rem; }
+.en-card-desc { font-size:0.82rem; line-height:1.7; color:#3c4f5c; }
+.en-card-chips { display:flex; flex-wrap:wrap; gap:0.4rem; margin-top:1rem; }
+.en-chip-sm { display:inline-flex; align-items:center; gap:0.3rem; background:#d3eaea; border-radius:100px; padding:0.25rem 0.7rem; font-size:0.7rem; font-weight:600; color:#1b6b6b; }
+.en-card-footer { padding:1rem 2rem; border-top:1px solid rgba(13,13,13,0.06); display:flex; align-items:center; justify-content:space-between; }
+.en-card-date { font-family:'DM Mono','SF Mono','Consolas',monospace; font-size:0.62rem; color:#788492; }
+.en-audience { font-size:0.7rem; font-weight:600; color:#1b6b6b; background:#d3eaea; padding:0.2rem 0.6rem; border-radius:100px; }
+@media(max-width:768px){ .enable-cards-grid { grid-template-columns:1fr; } }
+
+/* PERSONAL PROJECTS */
+.personal-section { background:#f4efe6; }
+.personal-cards { display:grid; grid-template-columns:repeat(3,1fr); gap:1.5rem; }
+.pers-card { background:#ffffff; border:1px solid rgba(13,13,13,0.1); border-radius:16px; overflow:hidden; transition:transform 0.3s, box-shadow 0.3s; display:flex; flex-direction:column; }
+.pers-card:hover { transform:translateY(-6px); box-shadow:0 24px 60px rgba(0,0,0,0.1); }
+.pers-card-top { padding:2rem 2rem 1.5rem; flex:1; }
+.pers-card-accent { height:4px; }
+.pers-emoji { font-size:2rem; margin-bottom:1rem; display:block; }
+.pers-tag { font-family:'DM Mono','SF Mono','Consolas',monospace; font-size:0.6rem; letter-spacing:0.18em; text-transform:uppercase; color:#1b6b6b; margin-bottom:0.75rem; display:flex; align-items:center; gap:0.4rem; }
+.pers-tag::before { content:''; width:1rem; height:1px; background:#1b6b6b; }
+.pers-title { font-family:'Playfair Display','Georgia','Times New Roman',serif; font-size:1.15rem; font-weight:700; line-height:1.3; margin-bottom:0.65rem; }
+.pers-desc { font-size:0.82rem; line-height:1.7; color:#3c4f5c; }
+.pers-features { margin-top:1rem; display:flex; flex-direction:column; gap:0.4rem; }
+.pers-feat { display:flex; align-items:flex-start; gap:0.5rem; font-size:0.78rem; color:#788492; }
+.pers-feat::before { content:'·'; color:#1b6b6b; font-weight:700; flex-shrink:0; }
+.pers-card-footer { padding:1rem 2rem; border-top:1px solid rgba(13,13,13,0.06); display:flex; align-items:center; justify-content:space-between; }
+.pers-status { display:flex; align-items:center; gap:0.4rem; font-size:0.7rem; color:#788492; }
+.pers-status-dot { width:6px; height:6px; border-radius:50%; background:#28a745; animation:blink 2s ease-in-out infinite; }
+.pers-status-dot.building { background:#c5973a; }
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.4} }
+.pers-link { font-size:0.72rem; font-weight:600; color:#1b6b6b; text-decoration:none; display:flex; align-items:center; gap:0.3rem; transition:gap 0.2s; }
+.pers-link:hover { gap:0.5rem; }
+.pers-link::after { content:'→'; }
+@media(max-width:900px){ .personal-cards { grid-template-columns:1fr; } }
+
+/* ─── DOCUMENT SHOWCASE ─── */
+.showcase-section {
+  background:#0d0d0d; padding:7rem 5rem;
+  position:relative; overflow:hidden;
+}
+.showcase-section::before {
+  content:''; position:absolute; inset:0;
+  background-image:
+    radial-gradient(ellipse 60% 40% at 15% 80%, rgba(197,151,58,0.06) 0%, transparent 60%),
+    radial-gradient(ellipse 50% 35% at 85% 20%, rgba(27,107,107,0.08) 0%, transparent 55%);
+  pointer-events:none;
+}
+.showcase-inner { position:relative; z-index:1; }
+.showcase-header { display:flex; align-items:flex-end; justify-content:space-between; margin-bottom:4rem; gap:2rem; }
+.showcase-eyebrow { font-family:'DM Mono',monospace; font-size:0.65rem; letter-spacing:0.18em; text-transform:uppercase; color:#c5973a; margin-bottom:0.9rem; display:flex; align-items:center; gap:0.6rem; }
+.showcase-eyebrow::before { content:''; width:1.5rem; height:1px; background:#c5973a; }
+.showcase-heading { font-family:'Playfair Display',serif; font-size:clamp(2rem,3.5vw,3.2rem); font-weight:900; line-height:1.1; color:#fff; }
+.showcase-heading em { font-style:italic; color:#c5973a; }
+.showcase-subtitle { font-size:0.85rem; font-weight:300; color:rgba(255,255,255,0.45); line-height:1.7; max-width:280px; text-align:right; padding-bottom:4px; }
+
+.docs-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:2rem; align-items:start; }
+
+.fan-group { position:relative; transition:transform 0.35s ease; }
+.fan-group:hover { transform:translateY(-6px); }
+.fan-group .doc-slide { display:flex; flex-direction:column; }
+.fan-group .doc-slide.hidden { display:none; }
+
+.doc-solo { transition:transform 0.35s ease; }
+.doc-solo:hover { transform:translateY(-6px); }
+
+.doc-card { border-radius:8px; overflow:hidden; box-shadow:0 6px 24px rgba(0,0,0,0.5), 0 1px 3px rgba(0,0,0,0.3); display:flex; flex-direction:column; position:relative; user-select:none; height:420px; }
+
+/* Flip CTA bar — inside the card, obviously interactive */
+.doc-flip-bar { border-top:1px solid rgba(255,255,255,0.1); padding:11px 16px; display:flex; align-items:center; justify-content:flex-end; flex-shrink:0; cursor:pointer; transition:background 0.2s; gap:8px; }
+.doc-flip-bar:hover { background:rgba(255,255,255,0.07); }
+.doc-flip-bar-label { font-family:'DM Mono',monospace; font-size:10px; letter-spacing:0.1em; color:#c5973a; text-transform:uppercase; }
+.doc-cream .doc-flip-bar { border-top-color:rgba(13,13,13,0.12); }
+.doc-cream .doc-flip-bar:hover { background:rgba(13,13,13,0.04); }
+.doc-cream .doc-flip-bar-label { color:#1b6b6b; }
+
+/* Screenshot back card — full bleed */
+.doc-card-img { cursor:pointer; }
+.doc-card-img > img { width:100%; height:100%; object-fit:cover; object-position:top center; display:block; }
+.doc-back-overlay { position:absolute; bottom:0; left:0; right:0; padding:50px 14px 13px; background:linear-gradient(transparent, rgba(0,0,0,0.82)); display:flex; align-items:flex-end; }
+.doc-back-btn { font-family:'DM Mono',monospace; font-size:10px; letter-spacing:0.08em; color:rgba(255,255,255,0.78); border:1px solid rgba(255,255,255,0.18); padding:5px 10px; border-radius:5px; }
+
+/* Teal variant */
+.doc-teal { background:linear-gradient(160deg, #1b6b6b 0%, #0a3535 100%); }
+.doc-teal .doc-header-band { background:rgba(255,255,255,0.06); border-bottom:1px solid rgba(255,255,255,0.08); }
+.doc-teal .doc-brand,.doc-teal .doc-pages-icon { color:rgba(255,255,255,0.4); }
+.doc-teal .doc-rule { background:#c5973a; }
+.doc-teal .doc-type { color:rgba(255,255,255,0.38); }
+.doc-teal .doc-title { color:#fff; }
+.doc-teal .doc-subtitle,.doc-teal .doc-snippet-line { color:rgba(255,255,255,0.58); }
+.doc-teal .doc-date { color:rgba(255,255,255,0.3); }
+.doc-teal .doc-tag { background:rgba(197,151,58,0.2); color:#c5973a; border-color:rgba(197,151,58,0.35); }
+.doc-teal .doc-snippet-bullet { color:#c5973a; }
+
+/* Gold variant */
+.doc-gold { background:linear-gradient(160deg, #c5973a 0%, #7a5b18 100%); }
+.doc-gold .doc-header-band { background:rgba(255,255,255,0.07); border-bottom:1px solid rgba(255,255,255,0.1); }
+.doc-gold .doc-brand,.doc-gold .doc-pages-icon { color:rgba(255,255,255,0.45); }
+.doc-gold .doc-rule { background:rgba(255,255,255,0.5); }
+.doc-gold .doc-type { color:rgba(255,255,255,0.45); }
+.doc-gold .doc-title { color:#fff; }
+.doc-gold .doc-subtitle,.doc-gold .doc-snippet-line { color:rgba(255,255,255,0.65); }
+.doc-gold .doc-date { color:rgba(255,255,255,0.35); }
+.doc-gold .doc-tag { background:rgba(255,255,255,0.15); color:rgba(255,255,255,0.9); border-color:rgba(255,255,255,0.25); }
+.doc-gold .doc-snippet-bullet { color:rgba(255,255,255,0.7); }
+
+/* Cream variant */
+.doc-cream { background:linear-gradient(160deg, #f4efe6 0%, #e2d9c8 100%); }
+.doc-cream .doc-header-band { background:rgba(13,13,13,0.04); border-bottom:1px solid rgba(13,13,13,0.08); }
+.doc-cream .doc-brand,.doc-cream .doc-pages-icon { color:rgba(13,13,13,0.32); }
+.doc-cream .doc-rule { background:#1b6b6b; }
+.doc-cream .doc-type { color:#788492; }
+.doc-cream .doc-title { color:#0d0d0d; }
+.doc-cream .doc-subtitle,.doc-cream .doc-snippet-line { color:#3c4f5c; }
+.doc-cream .doc-date { color:#788492; }
+.doc-cream .doc-tag { background:#d3eaea; color:#1b6b6b; border-color:rgba(27,107,107,0.2); }
+.doc-cream .doc-snippet-bullet { color:#1b6b6b; }
+
+/* Dark variant */
+.doc-dark { background:linear-gradient(160deg, #3c4f5c 0%, #0d1820 100%); }
+.doc-dark .doc-header-band { background:rgba(255,255,255,0.04); border-bottom:1px solid rgba(255,255,255,0.06); }
+.doc-dark .doc-brand,.doc-dark .doc-pages-icon { color:rgba(255,255,255,0.3); }
+.doc-dark .doc-rule { background:#1b6b6b; }
+.doc-dark .doc-type { color:rgba(255,255,255,0.33); }
+.doc-dark .doc-title { color:#fff; }
+.doc-dark .doc-subtitle,.doc-dark .doc-snippet-line { color:rgba(255,255,255,0.52); }
+.doc-dark .doc-date { color:rgba(255,255,255,0.26); }
+.doc-dark .doc-tag { background:rgba(27,107,107,0.25); color:#6ecece; border-color:rgba(27,107,107,0.4); }
+.doc-dark .doc-snippet-bullet { color:#6ecece; }
+
+.doc-preview { width:100%; height:220px; object-fit:cover; object-position:top center; display:block; flex-shrink:0; border-bottom:1px solid rgba(0,0,0,0.12); }
+.doc-header-band { padding:10px 14px; display:flex; align-items:center; justify-content:space-between; flex-shrink:0; }
+.doc-brand { font-family:'DM Mono',monospace; font-size:10px; letter-spacing:0.1em; text-transform:uppercase; }
+.doc-pages-icon { font-family:'DM Mono',monospace; font-size:9px; letter-spacing:0.05em; }
+.doc-body { flex:1; padding:18px 18px 10px; display:flex; flex-direction:column; position:relative; overflow:hidden; }
+.doc-rule { width:26px; height:2px; margin-bottom:12px; flex-shrink:0; }
+.doc-type { font-family:'DM Mono',monospace; font-size:10px; letter-spacing:0.12em; text-transform:uppercase; margin-bottom:9px; flex-shrink:0; }
+.doc-title { font-family:'Playfair Display',serif; font-size:clamp(15px,1.8vw,19px); font-weight:700; line-height:1.25; margin-bottom:9px; flex-shrink:0; }
+.doc-subtitle { font-size:11px; font-weight:400; line-height:1.6; flex:1; overflow:hidden; }
+.doc-snippet { margin-top:8px; flex:1; display:flex; flex-direction:column; gap:5px; overflow:hidden; }
+.doc-snippet-line { display:flex; align-items:flex-start; gap:5px; font-size:10px; line-height:1.5; font-family:'DM Mono',monospace; }
+.doc-snippet-bullet { flex-shrink:0; margin-top:1px; }
+.doc-chips-bar { padding:8px 14px 6px; display:flex; flex-wrap:wrap; gap:4px; flex-shrink:0; }
+.doc-chip { font-family:'DM Mono',monospace; font-size:9px; padding:3px 8px; border-radius:100px; font-weight:500; letter-spacing:0.03em; border:1px solid; white-space:nowrap; }
+.doc-footer { padding:8px 14px 12px; display:flex; align-items:center; justify-content:space-between; flex-shrink:0; gap:6px; }
+.doc-date { font-family:'DM Mono',monospace; font-size:9px; letter-spacing:0.08em; }
+.doc-tag { font-family:'DM Sans',sans-serif; font-size:8.5px; font-weight:600; padding:3px 8px; border-radius:3px; border:1px solid; letter-spacing:0.04em; text-transform:uppercase; }
+
+/* chip bar color variants */
+.doc-teal .doc-chips-bar { border-top:1px solid rgba(255,255,255,0.07); }
+.doc-teal .doc-chip { background:rgba(197,151,58,0.15); color:#c5973a; border-color:rgba(197,151,58,0.3); }
+.doc-gold .doc-chips-bar { border-top:1px solid rgba(255,255,255,0.1); }
+.doc-gold .doc-chip { background:rgba(255,255,255,0.12); color:rgba(255,255,255,0.85); border-color:rgba(255,255,255,0.2); }
+.doc-cream .doc-chips-bar { border-top:1px solid rgba(13,13,13,0.08); }
+.doc-cream .doc-chip { background:#d3eaea; color:#1b6b6b; border-color:rgba(27,107,107,0.25); }
+.doc-dark .doc-chips-bar { border-top:1px solid rgba(255,255,255,0.06); }
+.doc-dark .doc-chip { background:rgba(27,107,107,0.2); color:#6ecece; border-color:rgba(27,107,107,0.35); }
+
+/* customer dashboard divider */
+.proj-divider { grid-column:1/-1; padding:1.5rem 0 0.5rem; border-top:1px solid rgba(13,13,13,0.1); display:flex; align-items:center; gap:0.75rem; }
+.proj-divider-label { font-family:'DM Mono',monospace; font-size:0.6rem; letter-spacing:0.18em; text-transform:uppercase; color:#788492; }
+.proj-divider-rule { flex:1; height:1px; background:rgba(13,13,13,0.07); }
+
+.doc-caption { margin-top:16px; padding:0 2px; }
+.doc-caption-title { font-size:0.82rem; font-weight:500; color:rgba(255,255,255,0.85); margin-bottom:3px; line-height:1.35; }
+.doc-caption-meta { font-family:'DM Mono',monospace; font-size:0.62rem; color:rgba(255,255,255,0.3); letter-spacing:0.05em; }
+
+.showcase-note { margin-top:4rem; padding-top:2.5rem; border-top:1px solid rgba(255,255,255,0.07); display:flex; align-items:center; gap:1.25rem; }
+.showcase-note-icon { width:30px; height:30px; border:1px solid rgba(197,151,58,0.3); border-radius:50%; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+.showcase-note-text { font-size:0.8rem; font-weight:300; color:rgba(255,255,255,0.35); line-height:1.65; }
+.showcase-note-text strong { color:rgba(255,255,255,0.6); font-weight:500; }
+
+@media(max-width:900px) { .docs-grid { grid-template-columns:repeat(2,1fr); } .showcase-header { flex-direction:column; align-items:flex-start; } .showcase-subtitle { text-align:left; max-width:100%; } }
+@media(max-width:580px) { .docs-grid { grid-template-columns:1fr; } .showcase-section { padding:4rem 2rem; } }
+
+/* IN MY OWN WORDS */
+.iow-section { background:#0d0d0d; color:#fff; padding:8rem 5rem; }
+.iow-section .sec-title { color:#fff; }
+.iow-section .sec-title span { color:#c5973a; font-style:italic; }
+.iow-section .sec-num { color:rgba(255,255,255,0.25); }
+.iow-grid { display:grid; grid-template-columns:1fr 1fr; gap:2rem; margin-top:4rem; }
+.iow-manifesto { grid-column:1 / -1; background:rgba(255,255,255,0.04); border:1px solid rgba(197,151,58,0.3); border-radius:16px; padding:3rem; position:relative; overflow:hidden; }
+.iow-manifesto::before { content:'"'; position:absolute; top:-0.5rem; left:2rem; font-family:'Playfair Display',serif; font-size:12rem; color:rgba(197,151,58,0.07); line-height:1; pointer-events:none; }
+.iow-manifesto-text { font-family:'Playfair Display',serif; font-size:clamp(1.15rem,1.8vw,1.55rem); font-weight:400; line-height:1.7; color:rgba(255,255,255,0.9); position:relative; z-index:1; }
+.iow-manifesto-text em { color:#c5973a; font-style:italic; }
+.iow-manifesto-attr { margin-top:1.5rem; font-family:'DM Mono',monospace; font-size:0.68rem; letter-spacing:0.15em; text-transform:uppercase; color:rgba(255,255,255,0.25); }
+.iow-take { background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.07); border-radius:14px; padding:2rem; transition:border-color 0.3s, background 0.3s; display:flex; flex-direction:column; justify-content:center; }
+.iow-take:hover { border-color:rgba(197,151,58,0.3); background:rgba(255,255,255,0.05); }
+.iow-take-label { font-family:'DM Mono',monospace; font-size:0.6rem; letter-spacing:0.18em; text-transform:uppercase; color:#c5973a; margin-bottom:0.9rem; display:flex; align-items:center; gap:0.5rem; }
+.iow-take-label::before { content:''; width:1.25rem; height:1px; background:#c5973a; }
+.iow-take-title { font-family:'Playfair Display',serif; font-size:1.15rem; font-weight:700; color:#fff; line-height:1.35; }
+
+/* CONTACT BAR */
+.contact-bar { background:#ede7db; padding:5rem 5rem 4rem; display:grid; grid-template-columns:1fr 1fr; gap:4rem; align-items:start; }
+.cb-eyebrow { font-family:'DM Mono',monospace; font-size:0.68rem; letter-spacing:0.2em; text-transform:uppercase; color:#1b6b6b; margin-bottom:1rem; display:flex; align-items:center; gap:0.6rem; }
+.cb-eyebrow::before { content:''; width:1.5rem; height:1px; background:#1b6b6b; }
+.cb-title { font-family:'Playfair Display',serif; font-size:2.4rem; font-weight:900; line-height:1.1; margin-bottom:1rem; }
+.cb-title em { color:#1b6b6b; font-style:italic; }
+.cb-sub { font-size:0.88rem; line-height:1.75; color:#3c4f5c; max-width:420px; }
+.cb-links { display:flex; gap:1rem; margin-top:2rem; flex-wrap:wrap; }
+.cb-link { display:flex; align-items:center; gap:0.6rem; padding:0.75rem 1.5rem; border-radius:10px; font-size:0.84rem; font-weight:600; text-decoration:none; transition:all 0.2s; border:1.5px solid; }
+.cb-link-email { background:#0d0d0d; color:#fff; border-color:#0d0d0d; }
+.cb-link-email:hover { background:#3c4f5c; border-color:#3c4f5c; }
+.cb-link-li { background:transparent; color:#0d0d0d; border-color:#0d0d0d; }
+.cb-link-li:hover { background:#0d0d0d; color:#fff; }
+.cb-right { background:#ffffff; border:1px solid rgba(13,13,13,0.1); border-radius:16px; padding:2.5rem; text-align:center; }
+.cb-resume-icon { font-size:2.5rem; margin-bottom:1rem; }
+.cb-resume-title { font-family:'Playfair Display',serif; font-size:1.4rem; font-weight:700; margin-bottom:0.6rem; }
+.cb-resume-sub { font-size:0.84rem; color:#788492; line-height:1.6; margin-bottom:1.75rem; }
+.cb-resume-btn { display:inline-flex; align-items:center; gap:0.6rem; background:#1b6b6b; color:#fff; padding:0.85rem 2rem; border-radius:10px; font-size:0.88rem; font-weight:600; text-decoration:none; transition:all 0.2s; }
+.cb-resume-btn:hover { background:#2a8888; transform:translateY(-1px); box-shadow:0 6px 20px rgba(27,107,107,0.3); }
+.cb-resume-note { font-family:'DM Mono',monospace; font-size:0.62rem; color:#788492; margin-top:1rem; letter-spacing:0.06em; }
+
+/* FOOTER */
+footer { background:#f4efe6; padding:2.5rem 5rem; display:flex; justify-content:space-between; align-items:center; border-top:1px solid rgba(13,13,13,0.1); }
+.f-name { font-family:'Playfair Display','Georgia','Times New Roman',serif; font-size:1rem; font-weight:700; }
+.f-meta { font-size:0.75rem; color:#788492; margin-top:0.2rem; }
+.f-right { text-align:right; }
+.f-co { font-weight:600; font-size:0.88rem; }
+.f-role { font-size:0.78rem; color:#788492; }
+
+/* DIVIDER */
+.divider { height:1px; background:rgba(13,13,13,0.1); margin:0 5rem; }
+
+/* FADE IN */
+.fi { opacity:0; transform:translateY(20px); transition:opacity 0.65s ease,transform 0.65s ease; }
+.fi.visible { opacity:1; transform:translateY(0); }
+
+@media(max-width:768px){
+  .hero{grid-template-columns:1fr;}
+  .hero-right{display:none;}
+  section{padding:4rem 2rem;}
+  .proj-grid{grid-template-columns:1fr;}
+  .enable-grid{grid-template-columns:1fr;}
+  .personal-grid{grid-template-columns:1fr;}
+  .impact-strip{grid-template-columns:repeat(2,1fr);}
+  footer{flex-direction:column;gap:1rem;text-align:center;}
+  .f-right{text-align:center;}
+  .divider{margin:0 2rem;}
+  nav{padding:1rem 1.5rem;}
+  .nav-links{gap:1rem;}
+  .iow-grid{grid-template-columns:1fr;}
+  .iow-section{padding:4rem 2rem;}
+  .contact-bar{grid-template-columns:1fr;padding:3rem 2rem;gap:2rem;}
+  .cb-title{font-size:1.8rem;}
+}
+</style>
+</head>
+<body>
+
+<!-- PASSWORD GATE -->
+<div id="password-gate" style="position:fixed;inset:0;z-index:9999;background:#0d0d0d;display:flex;align-items:center;justify-content:center;font-family:'DM Sans',-apple-system,sans-serif;">
+  <div style="text-align:center;max-width:360px;padding:2rem;">
+    <div style="font-family:'Playfair Display','Georgia',serif;font-size:1.5rem;font-weight:700;color:#fff;margin-bottom:0.5rem;">Vicky Park</div>
+    <div style="font-family:'DM Mono','SF Mono','Consolas',monospace;font-size:0.65rem;letter-spacing:0.2em;text-transform:uppercase;color:#c5973a;margin-bottom:2.5rem;">AI Leadership Portfolio</div>
+    <input id="pw-input" type="password" placeholder="Enter password" onkeydown="if(event.key==='Enter')checkPW()" style="width:100%;padding:0.85rem 1.25rem;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.15);border-radius:10px;color:#fff;font-family:'DM Sans',sans-serif;font-size:0.9rem;outline:none;margin-bottom:0.75rem;box-sizing:border-box;"/>
+    <div id="pw-error" style="color:#c0452b;font-size:0.78rem;margin-bottom:0.75rem;min-height:1.2em;"></div>
+    <button onclick="checkPW()" style="width:100%;padding:0.85rem;background:#1b6b6b;color:#fff;border:none;border-radius:10px;font-family:'DM Sans',sans-serif;font-size:0.88rem;font-weight:600;cursor:pointer;transition:background 0.2s;" onmouseover="this.style.background='#2a8888'" onmouseout="this.style.background='#1b6b6b'">View Portfolio</button>
+    <div style="margin-top:1.5rem;font-size:0.72rem;color:rgba(255,255,255,0.25);">Reach out for access &mdash; vicky.paark@gmail.com</div>
+  </div>
+</div>
+
+<script>
+function checkPW() {
+  const val = document.getElementById('pw-input').value;
+  const err = document.getElementById('pw-error');
+  if (val === 'portfolio2026') {
+    document.getElementById('password-gate').style.display = 'none';
+    sessionStorage.setItem('portfolio_auth', '1');
+  } else {
+    err.textContent = 'Incorrect password. Try again.';
+    document.getElementById('pw-input').value = '';
+    document.getElementById('pw-input').focus();
+  }
+}
+if (sessionStorage.getItem('portfolio_auth') === '1') {
+  document.addEventListener('DOMContentLoaded', function() {
+    var gate = document.getElementById('password-gate');
+    if (gate) gate.style.display = 'none';
+  });
+}
+</script>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-name">Vicky Park</div>
+  <ul class="nav-links">
+    <li><a href="#dashboards">Dashboards</a></li>
+    <li><a href="#customer">Customer Work</a></li>
+    <li><a href="#enablement">Enablement</a></li>
+    <li><a href="#personal">Personal</a></li>
+    <li><a href="#documents">Documents</a></li>
+    <li><a href="#philosophy">AI Takes</a></li>
+    <li><a href="#contact">Contact</a></li>
+  </ul>
+</nav>
+
+<!-- HERO -->
+<div class="hero" style="padding-top:60px;">
+  <div class="hero-left">
+    <div class="eyebrow">Apr 2026</div>
+    <h1 class="hero-title">Building AI<br>from the<br><em>ground up.</em></h1>
+    <p class="hero-sub">A self-directed body of work spanning AI-driven ERP solution demonstrations, org-wide enablement, and original thought leadership &mdash; produced independently of the core job description.</p>
+    <div class="hero-stats">
+      <div><div class="stat-n">15+</div><div class="stat-l">Projects</div></div>
+      <div><div class="stat-n">125+</div><div class="stat-l">Curated Prompts</div></div>
+      <div><div class="stat-n">3+</div><div class="stat-l">Orgs Impacted</div></div>
+    </div>
+  </div>
+  <div class="hero-right">
+    <div class="hero-grid"></div>
+    <div class="bg-panel">
+      <div class="bg-panel-eyebrow">Career Background</div>
+      <div class="bg-company">
+        <div class="bg-co-badge" style="background:rgba(248,0,0,0.12);border:1px solid rgba(248,0,0,0.25);">
+          <span class="bg-co-name" style="color:#FF4136;">NetSuite</span>
+          <span class="bg-co-sub" style="color:rgba(255,255,255,0.5);">Sales Engineering</span>
+        </div>
+        <div class="bg-co-role">Solution Consultant &middot; 2024&ndash;Present</div>
+        <div class="bg-co-chips">
+          <span class="bg-chip">AI Strategy</span>
+          <span class="bg-chip">ERP Solutions & Advisory</span>
+          <span class="bg-chip">Customer Enablement</span>
+        </div>
+      </div>
+      <div class="bg-rule"></div>
+      <div class="bg-company">
+        <div class="bg-co-badge" style="background:rgba(134,188,37,0.1);border:1px solid rgba(134,188,37,0.22);">
+          <span class="bg-co-name" style="color:#86BC25;letter-spacing:0.06em;">DELOITTE</span>
+        </div>
+        <div class="bg-co-role">Cloud & Technology Consulting &middot; 2021&ndash;2023</div>
+        <div class="bg-co-chips">
+          <span class="bg-chip">Digital Transformation</span>
+          <span class="bg-chip">ERP Implementation</span>
+          <span class="bg-chip">Process Automation</span>
+        </div>
+      </div>
+      <div class="bg-rule"></div>
+      <div class="bg-company">
+        <div class="bg-co-badge" style="background:rgba(248,0,0,0.08);border:1px solid rgba(248,0,0,0.18);">
+          <span class="bg-co-name" style="color:#FF6B6B;">ORACLE</span>
+          <span class="bg-co-sub" style="color:rgba(255,255,255,0.45);">Applications Consulting</span>
+        </div>
+        <div class="bg-co-role">Consulting &middot; 2019&ndash;2021</div>
+        <div class="bg-co-chips">
+          <span class="bg-chip">Enterprise Consulting</span>
+          <span class="bg-chip">Project Management</span>
+          <span class="bg-chip">Client Advisory</span>
+        </div>
+      </div>
+      <div class="bg-rule"></div>
+      <div class="bg-expertise-label">Core Expertise</div>
+      <div class="bg-exp-chips">
+        <span class="bg-exp-chip">Solution Engineering &amp; Delivery</span>
+        <span class="bg-exp-chip">Digital Transformation</span>
+        <span class="bg-exp-chip">Technology Enablement</span>
+        <span class="bg-exp-chip">AI Strategy</span>
+        <span class="bg-exp-chip">Systems Optimization</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- IMPACT STRIP -->
+<div class="impact-strip">
+  <div><div class="is-num">10+</div><div class="is-label">Demo Story Lines Built from Scratch</div></div>
+  <div><div class="is-num">20+</div><div class="is-label">Interactive Dashboards Delivered</div></div>
+  <div><div class="is-num">125+</div><div class="is-label">Curated Prompts Across 10 Domains</div></div>
+  <div><div class="is-num">3+</div><div class="is-label">Practices Impacted</div></div>
+  <div><div class="is-num">C-Suite</div><div class="is-label">Win Stories</div></div>
+</div>
+
+<!-- DASHBOARDS SECTION -->
+<section class="dashboards-section" id="dashboards">
+  <div class="sec-header">
+    <span class="sec-num">01</span>
+    <h2 class="sec-title">Live <span>Dashboards</span></h2>
+  </div>
+  <p class="sec-desc" style="margin-left:3rem;">
+    Fully interactive — not screenshots. Click any tab below to load the live artifact, then filter, drill, and explore inside it.
+  </p>
+
+  <div class="dash-instruction">
+    <span class="dash-instruction-arrow">&#9654; Select a dashboard to explore</span>
+    &nbsp;&mdash;&nbsp; each tab loads a different interactive artifact
+  </div>
+
+    <div class="dash-tabs">
+    <button class="dash-tab active" onclick="switchDash('cgf')" id="tab-cgf">
+      <span class="dot" style="background:#003d7a;"></span>
+      Nonprofit Program Efficacy Executive Dashboard
+    </button>
+    <button class="dash-tab" onclick="switchDash('inv')" id="tab-inv">
+      <span class="dot" style="background:#86B596;"></span>
+      Inventory &amp; OpEx Optimization
+    </button>
+    <button class="dash-tab" onclick="switchDash('efh')" id="tab-efh">
+      <span class="dot" style="background:#36677D;"></span>
+      Executive Financial Health Dashboard
+    </button>
+    <button class="dash-tab" onclick="switchDash('cab')" id="tab-cab">
+      <span class="dot" style="background:#FFB199;"></span>
+      Contract Asset &amp; Progress Billing
+    </button>
+    <button class="dash-tab" onclick="switchDash('pm')" id="tab-pm">
+      <span class="dot" style="background:#94BFCE;"></span>
+      Professional Services & Project Management Dashboard
+    </button>
+    <button class="dash-tab" onclick="switchDash('ap2')" id="tab-ap2">
+      <span class="dot" style="background:#FF8675;"></span>
+      AP &amp; Cash Flow (Full)
+    </button>
+    <button class="dash-tab" onclick="switchDash('fcc')" id="tab-fcc">
+      <span class="dot" style="background:#E2C06B;"></span>
+      Financial Close &amp; Consolidations
+    </button>
+  </div>
+
+  <!-- Context blocks -->
+
+  <div class="dash-context active" id="ctx-cgf">
+    <div class="dash-context-inner">
+      <div style="flex:1;">
+        <div class="dc-label">Nonprofit Organization &middot; FY25 Program Efficacy Executive Dashboard</div>
+        <div class="dc-desc">
+          Full interactive program efficacy dashboard for a nonprofit — 700 children served across 6 programs,
+          AI-powered strategic narrative, grant runway analysis, cost-per-child benchmarking, and FY26 board-ready
+          recommendations. Includes Report Builder and Deck Builder for one-click PDF &amp; PowerPoint output.
+          Built to show a CFO or Program Director how AI-powered ERP drives mission-aligned decisions.
+        </div>
+        <div class="dc-tags">
+          <span class="dc-tag">CFO / Program Director Persona</span>
+          <span class="dc-tag">Program Efficacy Scoring</span>
+          <span class="dc-tag">Grant Portfolio</span>
+          <span class="dc-tag">AI Narrative Analysis</span>
+          <span class="dc-tag">Report &amp; Deck Builder</span>
+        </div>
+      </div>
+      <div style="flex-shrink:0;text-align:right;">
+        <div class="dc-label">Persona</div>
+        <div style="color:#fff;font-size:0.88rem;font-weight:600;">CFO<br>/ Program Director</div>
+        <div class="dc-label" style="margin-top:0.75rem;">Feature</div>
+        <div style="color:rgba(255,255,255,0.55);font-size:0.78rem;">AI Narrative &middot; Deck Builder &middot; MCP Connector</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="dash-context" id="ctx-inv">
+    <div class="dash-context-inner">
+      <div style="flex:1;">
+        <div class="dc-label">FY25 Inventory &amp; OpEx Optimization &middot; Operations Persona</div>
+        <div class="dc-desc">
+          Interactive 3-tab dashboard: inventory aging by category, turnover vs. target trend, OpEx budget vs. actual
+          by department, and AI-generated optimization recommendations. Filterable by quarter and category.
+          Built for VP Operations, Controller, and CFO audiences — showing AI as a margin-recovery tool, not just reporting.
+        </div>
+        <div class="dc-tags">
+          <span class="dc-tag">VP Operations Persona</span>
+          <span class="dc-tag">Inventory Aging</span>
+          <span class="dc-tag">OpEx Variance</span>
+          <span class="dc-tag">AI Recommendations</span>
+          <span class="dc-tag">3 Tabs</span>
+        </div>
+      </div>
+      <div style="flex-shrink:0;text-align:right;">
+        <div class="dc-label">Persona</div>
+        <div style="color:#fff;font-size:0.88rem;font-weight:600;">VP Operations<br>/ Controller</div>
+        <div class="dc-label" style="margin-top:0.75rem;">Feature</div>
+        <div style="color:rgba(255,255,255,0.55);font-size:0.78rem;">Narrative Insights</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="dash-context" id="ctx-efh">
+    <div class="dash-context-inner">
+      <div style="flex:1;">
+        <div class="dc-label">Executive Financial Health Dashboard &middot; Nov 2024&ndash;Nov 2025 YTD</div>
+        <div class="dc-desc">
+          Comprehensive multi-subsidiary financial analysis &mdash; $27.6M revenue, 4-tab navigation
+          (Overview, Subsidiary Analysis, Cash &amp; Liquidity, Profitability). AR aging deep-dive,
+          cash flow trends, working capital ratios, and FY2026 strategic action plan.
+        </div>
+        <div class="dc-tags">
+          <span class="dc-tag">CFO / Controller Persona</span>
+          <span class="dc-tag">Multi-Subsidiary P&amp;L</span>
+          <span class="dc-tag">AR Aging</span>
+          <span class="dc-tag">Cash Flow</span>
+          <span class="dc-tag">4-Tab Navigation</span>
+        </div>
+      </div>
+      <div style="flex-shrink:0;text-align:right;">
+        <div class="dc-label">Persona</div>
+        <div style="color:#fff;font-size:0.88rem;font-weight:600;">CFO<br>/ Controller</div>
+        <div class="dc-label" style="margin-top:0.75rem;">Feature</div>
+        <div style="color:rgba(255,255,255,0.55);font-size:0.78rem;">Financial Health Score</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="dash-context" id="ctx-cab">
+    <div class="dash-context-inner">
+      <div style="flex:1;">
+        <div class="dc-label">Contract Asset/Liability &amp; Progress Billing &middot; 15 Contracts</div>
+        <div class="dc-desc">
+          GAAP-compliant revenue recognition dashboard &mdash; 15 contracts across 4 subsidiaries,
+          filterable by subsidiary or active status. Tracks earned vs invoiced, unbilled
+          contract assets, over-billing liabilities, retainage, and change orders.
+          Bar chart by subsidiary + health status badges per contract.
+        </div>
+        <div class="dc-tags">
+          <span class="dc-tag">Controller Persona</span>
+          <span class="dc-tag">POC Revenue Recognition</span>
+          <span class="dc-tag">Contract Assets</span>
+          <span class="dc-tag">Retainage</span>
+          <span class="dc-tag">Multi-Subsidiary</span>
+          <span class="dc-tag">Interactive Filter</span>
+        </div>
+      </div>
+      <div style="flex-shrink:0;text-align:right;">
+        <div class="dc-label">Persona</div>
+        <div style="color:#fff;font-size:0.88rem;font-weight:600;">Controller<br>/ Rev Rec</div>
+        <div class="dc-label" style="margin-top:0.75rem;">Feature</div>
+        <div style="color:rgba(255,255,255,0.55);font-size:0.78rem;">GAAP Compliance View</div>
+      </div>
+    </div>
+  </div>
+  
+  <div class="dash-context" id="ctx-pm">
+    <div class="dash-context-inner">
+      <div style="flex:1;">
+        <div class="dc-label">Prorfessional Services & Project Management Dashboard &middot; PS Persona</div>
+        <div class="dc-desc">
+          Kanban + Profitability view for professional services — filterable by manager, customer, status,
+          and service type. Project health, budget vs. actuals, margin analysis, and AI-powered billing
+          recommendations per project.
+        </div>
+        <div class="dc-tags">
+          <span class="dc-tag">PS Operations</span>
+          <span class="dc-tag">Kanban Board</span>
+          <span class="dc-tag">Profitability View</span>
+          <span class="dc-tag">Budget vs. Actual</span>
+          <span class="dc-tag">AI Billing Recommendations</span>
+        </div>
+      </div>
+      <div style="flex-shrink:0;text-align:right;">
+        <div class="dc-label">Persona</div>
+        <div style="color:#fff;font-size:0.88rem;font-weight:600;">PS Manager<br>/ Operations Lead</div>
+        <div class="dc-label" style="margin-top:0.75rem;">Feature</div>
+        <div style="color:rgba(255,255,255,0.55);font-size:0.78rem;">MCP &middot; Prompt Studio</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="dash-context" id="ctx-ap2">
+    <div class="dash-context-inner">
+      <div style="flex:1;">
+        <div class="dc-label">AP &amp; Cash Flow Command Center &middot; Full Version &middot; YTD 2025</div>
+        <div class="dc-desc">
+          The complete 6-tab AP intelligence dashboard: executive KPIs and 13-week cash flow forecast,
+          Invoice Kanban, deep analytics (expense variance + working capital CCC),
+          vendor intelligence (scorecard, spend distribution, concentration risk),
+          compliance &amp; risk monitoring, and payment batch execution.
+        </div>
+        <div class="dc-tags">
+          <span class="dc-tag">AP Manager</span>
+          <span class="dc-tag">Cash Flow Forecast</span>
+          <span class="dc-tag">Vendor Scorecard</span>
+          <span class="dc-tag">Compliance &amp; Risk</span>
+          <span class="dc-tag">Payment Batches</span>
+          <span class="dc-tag">Working Capital CCC</span>
+        </div>
+      </div>
+      <div style="flex-shrink:0;text-align:right;">
+        <div class="dc-label">Persona</div>
+        <div style="color:#fff;font-size:0.88rem;font-weight:600;">AP Manager<br>/ Controller</div>
+        <div class="dc-label" style="margin-top:0.75rem;">Tabs</div>
+        <div style="color:rgba(255,255,255,0.55);font-size:0.78rem;">6 views</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="dash-context" id="ctx-fcc">
+    <div class="dash-context-inner">
+      <div style="flex:1;">
+        <div class="dc-label">Financial Close &amp; Consolidations &middot; December 2025</div>
+        <div class="dc-desc">
+          End-to-end close and consolidation management across 6 stages and 31 tasks — Pre-Close, Period Closing,
+          Revenue Recognition, Reconciliations, Financial Reporting, and Review &amp; Approval.
+          Click any task checkbox to cycle status. By-owner accountability, completion donut,
+          days-remaining counter, and at-risk alerts all update live. Invoice Review tab with
+          live NetSuite data for 83 December invoices.
+        </div>
+        <div class="dc-tags">
+          <span class="dc-tag">Controller Persona</span>
+          <span class="dc-tag">6-Stage Close</span>
+          <span class="dc-tag">31 Tasks</span>
+          <span class="dc-tag">By-Owner View</span>
+          <span class="dc-tag">Invoice Review</span>
+          <span class="dc-tag">Intercompany Eliminations</span>
+          <span class="dc-tag">Interactive</span>
+        </div>
+      </div>
+      <div style="flex-shrink:0;text-align:right;">
+        <div class="dc-label">Persona</div>
+        <div style="color:#fff;font-size:0.88rem;font-weight:600;">Controller<br>/ CFO</div>
+        <div class="dc-label" style="margin-top:0.75rem;">Feature</div>
+        <div style="color:rgba(255,255,255,0.55);font-size:0.78rem;">Intelligent Close Manager</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Dashboard frames -->
+
+  <div class="dash-frame-wrap active" id="frame-cgf">
+    <div class="dash-frame-header">
+      <div class="wdot wd-r"></div><div class="wdot wd-y"></div><div class="wdot wd-g"></div>
+      <span class="frame-url">nonprofit-program-efficacy &middot; FY25 Executive Dashboard &middot; AI Narrative &middot; Deck &amp; Report Builder</span>
+    </div>
+    <div class="dash-iframe-wrap-inner"><iframe class="dash-iframe" id="iframe-cgf" title="Nonprofit Program Efficacy Executive Dashboard" src="dashboards/cgf_dashboard.html" loading="lazy"></iframe></div>
+  </div>
+
+  <div class="dash-frame-wrap" id="frame-inv">
+    <div class="dash-frame-header">
+      <div class="wdot wd-r"></div><div class="wdot wd-y"></div><div class="wdot wd-g"></div>
+      <span class="frame-url">fy25-inventory-opex-optimization &middot; 3 Tabs &middot; Aging · OpEx · AI Recommendations</span>
+    </div>
+    <div class="dash-iframe-wrap-inner"><iframe class="dash-iframe" id="iframe-inv" title="Inventory and OpEx Dashboard" src="dashboards/inventory_opex.html" loading="lazy"></iframe></div>
+  </div>
+
+  <div class="dash-frame-wrap" id="frame-efh">
+    <div class="dash-frame-header">
+      <div class="wdot wd-r"></div><div class="wdot wd-y"></div><div class="wdot wd-g"></div>
+      <span class="frame-url">executive-financial-health &middot; Nov 2024&ndash;Nov 2025 &middot; 4 Views &middot; P&amp;L &middot; Cash &middot; Profitability &middot; Subsidiaries</span>
+    </div>
+    <div class="dash-iframe-wrap-inner"><iframe class="dash-iframe" id="iframe-efh" title="Executive Financial Health Dashboard" src="dashboards/executive_financial_health.html" loading="lazy"></iframe></div>
+  </div>
+
+  <div class="dash-frame-wrap" id="frame-cab">
+    <div class="dash-frame-header">
+      <div class="wdot wd-r"></div><div class="wdot wd-y"></div><div class="wdot wd-g"></div>
+      <span class="frame-url">contract-asset-progress-billing &middot; 15 Contracts &middot; POC Revenue Recognition &middot; Retainage &middot; Change Orders</span>
+    </div>
+    <div class="dash-iframe-wrap-inner"><iframe class="dash-iframe" id="iframe-cab" title="Contract Asset and Progress Billing Dashboard" src="dashboards/contract_asset_dashboard.html" loading="lazy"></iframe></div>
+  </div>
+  
+  <div class="dash-frame-wrap" id="frame-pm">
+    <div class="dash-frame-header">
+      <div class="wdot wd-r"></div><div class="wdot wd-y"></div><div class="wdot wd-g"></div>
+      <span class="frame-url">professional-services-&-project-management-dashboard &middot; Kanban + Profitability &middot; PS Operations</span>
+    </div>
+    <div class="dash-iframe-wrap-inner"><iframe class="dash-iframe" id="iframe-pm" title="Project Management Dashboard" src="dashboards/pm.html" loading="lazy"></iframe></div>
+  </div>
+
+  <div class="dash-frame-wrap" id="frame-ap2">
+    <div class="dash-frame-header">
+      <div class="wdot wd-r"></div><div class="wdot wd-y"></div><div class="wdot wd-g"></div>
+      <span class="frame-url">ap-cashflow-full &middot; 6 Views &middot; Executive · Kanban · Analytics · Vendors · Compliance · Batches</span>
+    </div>
+    <div class="dash-iframe-wrap-inner"><iframe class="dash-iframe" id="iframe-ap2" title="AP Cash Flow Full" src="dashboards/ap_rt.html" loading="lazy"></iframe></div>
+  </div>
+
+  <div class="dash-frame-wrap" id="frame-fcc">
+    <div class="dash-frame-header">
+      <div class="wdot wd-r"></div><div class="wdot wd-y"></div><div class="wdot wd-g"></div>
+      <span class="frame-url">financial-close-consolidations &middot; Dec 2025 &middot; 6 Stages &middot; 31 Tasks &middot; Invoice Review</span>
+    </div>
+    <div class="dash-iframe-wrap-inner"><iframe class="dash-iframe" id="iframe-fcc" title="Financial Close and Consolidations" src="dashboards/financial_close_consolidations.html" loading="lazy"></iframe></div>
+  </div>
+
+</section>
+
+<!-- CUSTOMER PROJECTS -->
+<section id="customer" style="background:#f4efe6;">
+  <div class="sec-header">
+    <span class="sec-num">02</span>
+    <h2 class="sec-title">Customer-<span>Facing</span></h2>
+  </div>
+  <p class="sec-desc">Demos and deliverables that moved conversations from feature walkthroughs to transformation — reaching CFOs and Controllers who weren't originally in the room.</p>
+
+  <div class="proj-grid fi">
+    <div class="proj-card">
+      <div class="proj-type">Demo Toolkit</div>
+      <div class="proj-name">NetSuite Next AI Demo Toolkit</div>
+      <div class="proj-desc">Persona-based story lines across AP, AR, FP&amp;A, Procurement, and Controller — each spotlighting a distinct AI feature: Ask Oracle, Narrative Insights, Exception Management, Intelligent Close Manager, and MCP. Built for any industry where finance, operations, or services leaders need to see AI working in their world — verified prompts, pitfall prep, and transition language included. Written to sound unscripted in front of any audience.</div>
+      <div class="proj-impact">→ Prospects see themselves in the demo — not a feature list</div>
+      <div class="proj-date">Mar 2026</div>
+    </div>
+    <div class="proj-card">
+      <div class="proj-type">AI Integration Practice</div>
+      <div class="proj-name">AI Integration Roadmap — Cross-Industry Framework</div>
+      <div class="proj-desc">Structured methodology for leading AI integration strategy across clients spanning diverse industries, business models, and org maturity levels. Each engagement begins with a full-picture assessment — business model, leadership values, current pain points, industry-leading practices — then builds a tailored roadmap grounded in the art of the possible. Claude Skills encode each deliverable type once: strategy docs, business analyses, and research reports run as repeatable, high-quality workflows customized per client context.</div>
+      <div class="proj-impact">→ Standardized process, never a one-size-fits-all output — tailored, relevant, impactful every time</div>
+      <div class="proj-date">Ongoing Practice</div>
+    </div>
+    <div class="proj-card">
+      <div class="proj-type">Consulting Philosophy</div>
+      <div class="proj-name">Technology-Led, Human-Centered Advisory</div>
+      <div class="proj-desc">Proactive engagement approach: identifying optimization opportunities before being asked, presenting AI-powered solutions with clear ROI and the honest cost of inaction. Leads with technology, anchored in the client&rsquo;s specific context — breaks down technical complexity into language that resonates, then demonstrates the art of the possible through interactive flows with real data, not generic feature lists. Built on a foundation of integrity and solution-driven partnership, not a pitch.</div>
+      <div class="proj-impact">→ Technology bridged with real-world, relatable impact — clients leave with clarity, not a sales deck</div>
+      <div class="proj-date">Ongoing</div>
+    </div>
+
+    <div class="proj-divider">
+      <span class="proj-divider-label">Intelligent Dashboards</span>
+      <div class="proj-divider-rule"></div>
+      <span class="proj-divider-label">Interactive · Business Process-Specific · Persona-Driven · AI-Powered</span>
+    </div>
+
+    <div class="proj-card">
+      <div class="proj-type">C-Suite Executive Dashboards</div>
+      <div class="proj-name">Executive AI Financial Dashboard</div>
+      <div class="proj-desc">Multi-tab financial intelligence across ARR, MRR, NRR, churn, PS metrics, efficiency &amp; profitability, sales growth, and cash flow — deep-linked to live ERP records. Built for CFO and VP Finance personas at SaaS, services, and high-growth companies. Translates AI output into a board-ready narrative, not raw data.</div>
+      <div class="proj-impact">→ AI value made visual and touchable — a CFO leaves knowing exactly what changes for their org</div>
+      <div class="proj-date">Oct 2025</div>
+    </div>
+    <div class="proj-card">
+      <div class="proj-type">Business Impact Intelligent Dashboard</div>
+      <div class="proj-name">Financial Close Assistant Dashboard</div>
+      <div class="proj-desc">Close task management across 6 stages with owner accountability, completion tracking, and at-risk alerts — built for Controller and CFO personas across any org running a month-end or quarter-end close. Automates visibility into what&rsquo;s stuck, who owns it, and what&rsquo;s at risk of slipping.</div>
+      <div class="proj-impact">→ Close management moves from email chains to a single source of truth</div>
+      <div class="proj-date">Oct 2025</div>
+    </div>
+    <div class="proj-card">
+      <div class="proj-type">Nonprofit Client Promptathon Team Leader</div>
+      <div class="proj-name">Pro-Bono Promptathon &amp; Strategic AI Prompt Engineered Dashboards</div>
+      <div class="proj-desc">Revenue, cost, and resource utilization by active project — actuals vs. budget with variance highlighting, profit margin by project, and subsidiary rollup. Built for professional services leaders and account teams at any org running billable projects or resource-based revenue models.</div>
+      <div class="proj-impact">→Powerful, AI-driven, and applicable prompts and outputs per organization's direction, vision, and challenges of today</div>
+      <div class="proj-date">Feb 2025</div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ENABLEMENT SECTION -->
+<section class="enable-section" id="enablement" style="background:#ede7db;">
+  <div class="sec-header">
+    <span class="sec-num">03</span>
+    <h2 class="sec-title">SC &amp; Sales <span>Enablement</span></h2>
+  </div>
+  <p class="sec-desc">Resources built to raise the floor for the whole org &mdash; reusable, immediately deployable, and still in use across SC, Sales, and PS.</p>
+
+  <div class="enable-cards-grid fi">
+
+    <div class="en-card">
+      <div class="en-card-accent" style="background:linear-gradient(90deg,#1b6b6b,#2a8888);"></div>
+      <div class="en-card-body">
+        <div class="en-card-tag">Flagship Resource &middot; Nov 2025</div>
+        <div class="en-card-title">NetSuite AI Super User Playbook</div>
+        <div class="en-card-desc">125+-prompt library built for the org. 10 &ldquo;Ultimate Dashboard&rdquo; prompts across ARR, project profitability, sales pipeline, cash flow, and customer health — each paired with 10 tiered follow-up queries. Includes a role-based quick reference for CFO, VP Sales, VP Ops, and VP CS. Adopted org-wide across SC, Sales, and PS.</div>
+        <div class="en-card-chips">
+          <span class="en-chip-sm">125+ prompts</span>
+          <span class="en-chip-sm">10+ domains</span>
+          <span class="en-chip-sm">Analyst to exec personas</span>
+        </div>
+      </div>
+      <div class="en-card-footer">
+        <div class="en-card-date">Nov 2025</div>
+        <span class="en-audience">SC &bull; Sales &bull; PS</span>
+      </div>
+    </div>
+
+    <div class="en-card">
+      <div class="en-card-accent" style="background:linear-gradient(90deg,#c5973a,#e8d4a0);"></div>
+      <div class="en-card-body">
+        <div class="en-card-tag">Internal All Hands: Strategic AI Conversations &middot; Dec 2025</div>
+        <div class="en-card-title">Strategic AI Conversations</div>
+        <div class="en-card-desc">Structured presentations varying in content - informative overviews, knowledge transfers, Claude MCP: how-to workshops, role-specific assets and tools launch for SC and Sales orgs covering the &ldquo;so what&rdquo; demo framework, pitfall mitigation, privacy talking points for live customer conversations, and repository of resources. Built to reduce delivery variability, minimize presenting inaccurate information  and standardize quality across the org with proper grounding in practice-wide AI readiness.</div>
+        <div class="en-card-chips">
+          <span class="en-chip-sm">Demo strategy</span>
+          <span class="en-chip-sm">Ready-made prompts</span>
+          <span class="en-chip-sm">Key info & FAQ</span>
+        </div>
+      </div>
+      <div class="en-card-footer">
+        <div class="en-card-date">Dec 2025</div>
+        <span class="en-audience">SC &bull; Sales</span>
+      </div>
+    </div>
+
+    <div class="en-card">
+      <div class="en-card-accent" style="background:linear-gradient(90deg,#0d0d0d,#3c4f5c);"></div>
+      <div class="en-card-body">
+        <div class="en-card-tag">NetSuite Next Toolkit &middot; Mar 2026</div>
+        <div class="en-card-title">NetSuite Next Demo & Delivery (SC-Ready)</div>
+        <div class="en-card-desc">10+ persona-based demo narratives with verified prompts any SC can adapt — each spotlighting a distinct AI capability embedded in the anticipated NetSuite upgrade. Intentionally varied to deliver contextual value to the audience. Published recorded demonstrations leveraging toolkit to effectively showcase the exciting future of NetSuite.</div>
+        <div class="en-card-chips">
+          <span class="en-chip-sm">AP &bull; AR &bull; FP&amp;A &bull;Controller</span>
+          <span class="en-chip-sm">Procurement</span>
+          <span class="en-chip-sm">C-Suite</span>
+          <span class="en-chip-sm">Verified prompts</span>
+        </div>
+      </div>
+      <div class="en-card-footer">
+        <div class="en-card-date">Mar 2026</div>
+        <span class="en-audience">SC &bull; Customer-Facing</span>
+      </div>
+    </div>
+
+    <div class="en-card">
+      <div class="en-card-accent" style="background:linear-gradient(90deg,#3c4f5c,#788492);"></div>
+      <div class="en-card-body">
+        <div class="en-card-tag">Win Story &middot; Nov 2025</div>
+        <div class="en-card-title">Win Story Framework + Solution Value Assessment</div>
+        <div class="en-card-desc">Structured post-demo win story template connecting AI features to business outcomes — replicable by PS and AEs independently. Paired with a deep-dive analysis illustrating the real-world quantitative & qualitative value of proposed NetSuite solution: ROI, time & labor, downstream impacts with current ERP products and system landscape, scalability for business goals and growth trajectory</div>
+        <div class="en-card-chips">
+          <span class="en-chip-sm">Business outcomes</span>
+          <span class="en-chip-sm">Value Assessment</span>
+          <span class="en-chip-sm">Deal strategy</span>
+        </div>
+      </div>
+      <div class="en-card-footer">
+        <div class="en-card-date">Nov 2025 &ndash; Sep 2025</div>
+        <span class="en-audience">PS &bull; AE &bull; Sales</span>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- PERSONAL SECTION -->
+<section id="personal" class="personal-section" style="background:#f4efe6;">
+  <div class="sec-header">
+    <span class="sec-num">04</span>
+    <h2 class="sec-title">Personal <span>Projects</span></h2>
+  </div>
+  <p class="sec-desc">Building for myself the same way I build for customers — with a real use case, a specific problem, and AI as the tool that closes the gap.</p>
+
+  <div class="personal-cards fi">
+
+    <div class="pers-card">
+      <div class="pers-card-accent" style="background:linear-gradient(90deg,#1b6b6b,#2a8888);"></div>
+      <div class="pers-card-top">
+        <span class="pers-emoji">&#127919;</span>
+        <div class="pers-tag">Recruitment Tracker/Applications Hub</div>
+        <div class="pers-title">AI Recruitment Tracker</div>
+        <div class="pers-desc">Purpose-built application for managing personal recruitment process. Tracks applications with fit and interest ratings, embeds company and interviewer research, and captures post-interview reflections so nothing falls through the cracks.</div>
+        <div class="pers-features">
+          <div class="pers-feat">Company research + interviewer intel per application</div>
+          <div class="pers-feat">Fit &amp; interest scoring — know where to invest energy</div>
+          <div class="pers-feat">Pre-interview prep + post-interview debrief capture</div>
+          <div class="pers-feat">Pipeline view across all active opportunities</div>
+        </div>
+      </div>
+      <div class="pers-card-footer">
+        <div class="pers-status"><div class="pers-status-dot building"></div>In active use</div>
+        <span style="font-size:0.72rem;color:#788492;">Built with Claude &middot; Apr 2026</span>
+      </div>
+    </div>
+
+    <div class="pers-card">
+      <div class="pers-card-accent" style="background:linear-gradient(90deg,#c5973a,#e8d4a0);"></div>
+      <div class="pers-card-top">
+        <span class="pers-emoji">&#128240;</span>
+        <div class="pers-tag">Daily Intelligence</div>
+        <div class="pers-title">Personal AI News Digest</div>
+        <div class="pers-desc">AI-powered news feed for staying ahead of tech and AI trends — pulling from high-signal sources (Hacker News, arXiv, Stratechery, research newsletters), filtered to what actually matters. PWA deployed on GitHub Pages, updated daily via automated workflow.</div>
+        <div class="pers-features">
+          <div class="pers-feat">Curated sources: HN, arXiv, Stratechery, The Batch, TLDR</div>
+          <div class="pers-feat">AI-summarized daily digest — signal over noise</div>
+          <div class="pers-feat">PWA — installable, works offline, mobile-first</div>
+          <div class="pers-feat">Automated GitHub Actions pipeline — runs daily, zero maintenance</div>
+        </div>
+      </div>
+      <div class="pers-card-footer">
+        <div class="pers-status"><div class="pers-status-dot"></div>Live</div>
+        <a href="https://park-v.github.io/daily-tech-digest/" target="_blank" class="pers-link">View live</a>
+      </div>
+    </div>
+
+    <div class="pers-card">
+      <div class="pers-card-accent" style="background:linear-gradient(90deg,#0d0d0d,#3c4f5c);"></div>
+      <div class="pers-card-top">
+        <span class="pers-emoji">&#10022;</span>
+        <div class="pers-tag">Meta Project</div>
+        <div class="pers-title">This Portfolio</div>
+        <div class="pers-desc">The site you're looking at was itself an AI project — designed, built, debugged, and iterated entirely in Claude. A self-contained HTML file with interactive React dashboards, hardened CSS, and iframes that survive GitHub Pages' strict rendering environment.</div>
+        <div class="pers-features">
+          <div class="pers-feat">5 fully interactive dashboards embedded via iframe</div>
+          <div class="pers-feat">Single-file — no build tools, no dependencies</div>
+          <div class="pers-feat">Debugged for GitHub Pages compatibility</div>
+          <div class="pers-feat">Iterative design: multiple versions to this one</div>
+        </div>
+      </div>
+      <div class="pers-card-footer">
+        <div class="pers-status"><div class="pers-status-dot building"></div>Always iterating</div>
+        <a href="https://github.com/park-v" target="_blank" class="pers-link">GitHub</a>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- DOCUMENT SHOWCASE -->
+<section class="showcase-section" id="documents">
+  <div class="showcase-inner">
+
+    <div class="showcase-header fi">
+      <div>
+        <div class="showcase-eyebrow">05 &mdash; The Work, On Paper</div>
+        <h2 class="showcase-heading">Artifacts worth<br><em>flipping through</em></h2>
+      </div>
+      <p class="showcase-subtitle">Playbooks, research, and frameworks built to actually get used &mdash; not filed away.</p>
+    </div>
+
+    <div class="docs-grid">
+
+      <!-- ── Group 1: Super User Playbook (carousel) ── -->
+      <div class="fan-group fi" data-slide="0">
+        <div class="doc-slide">
+          <div class="doc-card doc-teal">
+            <div class="doc-header-band">
+              <span class="doc-brand">NetSuite AI</span>
+              <span class="doc-pages-icon">100+ prompts</span>
+            </div>
+            <div class="doc-body">
+              <div class="doc-rule"></div>
+              <div class="doc-type">Internal Playbook · v2.0</div>
+              <div class="doc-title">AI Super User Playbook</div>
+              <div class="doc-subtitle">100+ production-ready prompts across 10 business domains — subscription management, project profitability, sales pipeline, cash flow, and customer health. Each paired with 10 tiered follow-up queries.</div>
+            </div>
+            <div class="doc-chips-bar">
+              <span class="doc-chip">100+ prompts</span>
+              <span class="doc-chip">10 domains</span>
+              <span class="doc-chip">4 exec personas</span>
+            </div>
+            <div class="doc-footer">
+              <span class="doc-date">Nov 2025</span>
+              <span class="doc-tag">Playbook</span>
+            </div>
+            <div class="doc-flip-bar" onclick="flipCard(this)">
+              <span class="doc-flip-bar-label">preview ↻</span>
+            </div>
+          </div>
+        </div>
+        <div class="doc-slide hidden">
+          <div class="doc-card doc-teal doc-card-img" onclick="flipCard(this)">
+            <img src="screenshots/playbook.png" alt="AI Super User Playbook — cover">
+            <div class="doc-back-overlay">
+              <span class="doc-back-btn">cover · 1 / 3 · → more inside</span>
+            </div>
+          </div>
+        </div>
+        <div class="doc-slide hidden">
+          <div class="doc-card doc-teal doc-card-img" onclick="flipCard(this)">
+            <img src="screenshots/playbook_ch5_dashboard.png" alt="Dashboard 05 — Customer Health &amp; Retention Intelligence">
+            <div class="doc-back-overlay">
+              <span class="doc-back-btn">dashboard 05 · 2 / 3 · → next</span>
+            </div>
+          </div>
+        </div>
+        <div class="doc-slide hidden">
+          <div class="doc-card doc-teal doc-card-img" onclick="flipCard(this)">
+            <img src="screenshots/playbook_ch5_prompts.png" alt="Dashboard 05 — follow-up prompts">
+            <div class="doc-back-overlay">
+              <span class="doc-back-btn">follow-up prompts · 3 / 3 · ← back</span>
+            </div>
+          </div>
+        </div>
+        <div class="doc-caption">
+          <div class="doc-caption-title">NetSuite AI Super User Playbook</div>
+          <div class="doc-caption-meta">125+ prompts · 10 domains · business function & persona variations</div>
+        </div>
+      </div>
+
+      <!-- ── Group 2: Demo Toolkit + Story Lines (carousel) ── -->
+      <div class="fan-group fi" data-slide="0">
+        <div class="doc-slide">
+          <div class="doc-card doc-dark">
+            <div class="doc-header-band">
+              <span class="doc-brand">NetSuite Next</span>
+              <span class="doc-pages-icon">10+ personas</span>
+            </div>
+            <div class="doc-body">
+              <div class="doc-rule"></div>
+              <div class="doc-type">Demo Toolkit</div>
+              <div class="doc-title">AI Demo Toolkit &amp; Persona Story Lines</div>
+              <div class="doc-subtitle">Branded pitch slides + 10+ live-demo narratives for Controller, AP, AR, FP&amp;A, Procurement, and C-Suite Executives. Verified prompts, pitfall prep, and transition language. Designed to serve as a framework in impactful and relevant client delivery.</div>
+            </div>
+            <div class="doc-chips-bar">
+              <span class="doc-chip">4 varieties of pitch slides</span>
+              <span class="doc-chip">10+ personas</span>
+              <span class="doc-chip">Contextual value</span>
+              <span class="doc-chip">Pitfall prep</span>
+            </div>
+            <div class="doc-footer">
+              <span class="doc-date">Mar 2026</span>
+              <span class="doc-tag">Demo Guide</span>
+            </div>
+            <div class="doc-flip-bar" onclick="flipCard(this)">
+              <span class="doc-flip-bar-label">inside look ↻</span>
+            </div>
+          </div>
+        </div>
+        <div class="doc-slide hidden">
+          <div class="doc-card doc-dark">
+            <div class="doc-header-band">
+              <span class="doc-brand">NetSuite Next · AP Persona</span>
+              <span class="doc-pages-icon">story line 02</span>
+            </div>
+            <div class="doc-body">
+              <div class="doc-rule"></div>
+              <div class="doc-type">SC-Ready · Exception Mgmt</div>
+              <div class="doc-title">AP Manager: Catching What Slips</div>
+              <div class="doc-subtitle">Opening hook built around the AP Manager's real pain point. Verified prompt, pitfall recovery notes if the demo stalls, and transition language to close on value — everything needed to run this story live.</div>
+            </div>
+            <div class="doc-chips-bar">
+              <span class="doc-chip">Pain-point hook</span>
+              <span class="doc-chip">Verified prompt</span>
+              <span class="doc-chip">Art of the possible</span>
+            </div>
+            <div class="doc-footer">
+              <span class="doc-date">Mar 2026</span>
+              <span class="doc-tag">Story Line 02</span>
+            </div>
+            <div class="doc-flip-bar" onclick="flipCard(this)">
+              <span class="doc-flip-bar-label">← back</span>
+            </div>
+          </div>
+        </div>
+        <div class="doc-caption">
+          <div class="doc-caption-title">NetSuite Next AI Demo Toolkit</div>
+          <div class="doc-caption-meta">4 pitch slides · 10+ personas · verified prompts</div>
+        </div>
+      </div>
+
+      <!-- ── Group 3: MCP Demo Guide (carousel) ── -->
+      <div class="fan-group fi" data-slide="0">
+        <div class="doc-slide">
+          <div class="doc-card doc-gold">
+            <div class="doc-header-band">
+              <span class="doc-brand">SC Enablement</span>
+              <span class="doc-pages-icon">5-min read</span>
+            </div>
+            <div class="doc-body">
+              <div class="doc-rule"></div>
+              <div class="doc-type">Comprehensive Guide: AI Go-To-Market Strategy</div>
+              <div class="doc-title">AI Go-To-Market<br>Key Points & Highlights</div>
+              <div class="doc-subtitle">SC-ready narrative for the Model Context Protocol integration service - presentation template, pre-built AI-powered dashboards, product in-action, and prompt library. Comprehensive guide for effective, digestible product introductions, common questions or concerns to tackle proactively, and strategic storytelling methods to drive maximum impact and value without reinventing the wheel. Includes pitfall recovery and a resource-close sequence.</div>
+            </div>
+            <div class="doc-chips-bar">
+              <span class="doc-chip">"So What" frame</span>
+              <span class="doc-chip">Tailored narrative</span>
+              <span class="doc-chip">Objections and FAQs</span>
+            </div>
+            <div class="doc-footer">
+              <span class="doc-date">Dec 2025</span>
+              <span class="doc-tag">Comprehensive Guide: AI Go-To-Market Strategy</span>
+            </div>
+            <div class="doc-flip-bar" onclick="flipCard(this)">
+              <span class="doc-flip-bar-label">preview ↻</span>
+            </div>
+          </div>
+        </div>
+        <div class="doc-slide hidden">
+          <div class="doc-card doc-gold doc-card-img" onclick="flipCard(this)">
+            <img src="screenshots/talktrack.png" alt="Comprehensive Guide: AI Go-To-Market Strategy preview">
+            <div class="doc-back-overlay">
+              <span class="doc-back-btn">← back to details</span>
+            </div>
+          </div>
+        </div>
+        <div class="doc-caption">
+          <div class="doc-caption-title">Comprehensive Guide: AI Go-To-Market Strategy</div>
+          <div class="doc-caption-meta">SC delivery strategy · AI-powered, Solution-led, Human-centered · Common Objections · Dec 2025</div>
+        </div>
+      </div>
+
+      <!-- ── Solo 4: Industry Leading Practices x AI Strategy (anonymized) ── -->
+      <div class="doc-solo fi">
+        <div class="doc-card doc-cream">
+          <div class="doc-header-band">
+            <span class="doc-brand">Account Management Office (AMO): AI Sales Motion</span>
+            <span class="doc-pages-icon">Apr 2026</span>
+          </div>
+          <div class="doc-body">
+            <div class="doc-rule"></div>
+            <div class="doc-type">AI Account Management Agent</div>
+            <div class="doc-title">Multi-Business-Line<br>AI Roadmap</div>
+            <div class="doc-subtitle">Business analysis, industry research, and AI strategic roadmap for leveraging AI agents to optimize client engagement preparation. Built using Claude Skills — credible, consistent, and efficient preparation; repeatable at scale; enhance engagement quality, foster client relationships and convert opportunities to results</div>
+          </div>
+          <div class="doc-chips-bar">
+            <span class="doc-chip">128–256% projected ROI</span>
+            <span class="doc-chip">Claude Skills</span>
+            <span class="doc-chip">3 Documents & Analysis</span>
+          </div>
+          <div class="doc-footer">
+            <span class="doc-date">Apr 2026</span>
+            <span class="doc-tag">Strategy</span>
+          </div>
+        </div>
+        <div class="doc-caption">
+          <div class="doc-caption-title">Industry Leading Practices x AI Strategy</div>
+          <div class="doc-caption-meta">Business analysis · Industry research · AI strategic roadmap</div>
+        </div>
+      </div>
+
+      <!-- ── Group 5: ERP Research + Consulting Rec (carousel) ── -->
+      <div class="fan-group fi" data-slide="0">
+        <div class="doc-slide">
+          <div class="doc-card doc-teal">
+            <div class="doc-header-band">
+              <span class="doc-brand">Industry Research</span>
+              <span class="doc-pages-icon">cross-industry</span>
+            </div>
+            <div class="doc-body">
+              <div class="doc-rule"></div>
+              <div class="doc-type">Background Research · Business Analysis</div>
+              <div class="doc-title">Industry Research &amp; AI Strategy</div>
+              <div class="doc-subtitle">Comparative research spanning market landscapes, multi-entity deal evaluation, and AI implementation feasibility — translated into actionable strategy. Built to surface the questions that change the conversation.</div>
+            </div>
+            <div class="doc-chips-bar">
+              <span class="doc-chip">Market landscape</span>
+              <span class="doc-chip">Business analysis</span>
+              <span class="doc-chip">AI strategy</span>
+            </div>
+            <div class="doc-footer">
+              <span class="doc-date">Sep 2025 &ndash; Present</span>
+              <span class="doc-tag">Research</span>
+            </div>
+            <div class="doc-flip-bar" onclick="flipCard(this)">
+              <span class="doc-flip-bar-label">inside look ↻</span>
+            </div>
+          </div>
+        </div>
+        <div class="doc-slide hidden">
+          <div class="doc-card doc-teal">
+            <div class="doc-header-band">
+              <span class="doc-brand">Consulting</span>
+              <span class="doc-pages-icon">recommendation</span>
+            </div>
+            <div class="doc-body">
+              <div class="doc-rule"></div>
+              <div class="doc-type">Value Prop · Mar 2026</div>
+              <div class="doc-title">Proactive ERP Optimization Recommendation</div>
+              <div class="doc-subtitle">Recommendation built based on business research, client history, and architecture analysis. Customer-centric framing grounded in context of systems and operations landscape - genuine curiosity, tight preparation, build rapport, approach as trusted advisor.</div>
+            </div>
+            <div class="doc-chips-bar">
+              <span class="doc-chip">Proactive advisory</span>
+              <span class="doc-chip">Consultative approach</span>
+              <span class="doc-chip">Value-led framing</span>
+            </div>
+            <div class="doc-footer">
+              <span class="doc-date">Mar 2026</span>
+              <span class="doc-tag">Consulting</span>
+            </div>
+            <div class="doc-flip-bar" onclick="flipCard(this)">
+              <span class="doc-flip-bar-label">← back</span>
+            </div>
+          </div>
+        </div>
+        <div class="doc-caption">
+          <div class="doc-caption-title">Industry Research · Business Analysis · AI Strategy</div>
+          <div class="doc-caption-meta">Cross-industry · Ongoing</div>
+        </div>
+      </div>
+
+      <!-- ── Group 6: 2026.1 Briefing Guide (carousel) ── -->
+      <div class="fan-group fi" data-slide="0">
+        <div class="doc-slide">
+          <div class="doc-card doc-dark">
+            <div class="doc-header-band">
+              <span class="doc-brand">SC &amp; Sales Resource</span>
+              <span class="doc-pages-icon">16 features</span>
+            </div>
+            <div class="doc-body">
+              <div class="doc-rule"></div>
+              <div class="doc-type">Release Briefing Guide</div>
+              <div class="doc-title">NetSuite 2026.1<br>Briefing Guide</div>
+              <div class="doc-subtitle">16 new features mapped to business value — before/after comparisons, discovery questions, and natural expansion plays. Built for product education and readiness: range of functional and technical depth to leverage in serving each client-facing teams' purpose. Organized by core business functions for ease of use and quick navigation in client discussions.</div>
+            </div>
+            <div class="doc-chips-bar">
+              <span class="doc-chip">Close Manager Portlet</span>
+              <span class="doc-chip">MCP Enhancements</span>
+              <span class="doc-chip">Payment Prediction</span>
+            </div>
+            <div class="doc-footer">
+              <span class="doc-date">Feb 2026</span>
+              <span class="doc-tag">Briefing Guide</span>
+            </div>
+            <div class="doc-flip-bar" onclick="flipCard(this)">
+              <span class="doc-flip-bar-label">preview ↻</span>
+            </div>
+          </div>
+        </div>
+        <div class="doc-slide hidden">
+          <div class="doc-card doc-dark doc-card-img" onclick="flipCard(this)">
+            <img src="screenshots/briefing_guide.png" alt="NetSuite 2026.1 Briefing Guide preview">
+            <div class="doc-back-overlay">
+              <span class="doc-back-btn">← back to details</span>
+            </div>
+          </div>
+        </div>
+        <div class="doc-caption">
+          <div class="doc-caption-title">NetSuite 2026.1 Release Briefing Guide</div>
+          <div class="doc-caption-meta">16 features · business value + discovery questions</div>
+        </div>
+      </div>
+
+    </div><!-- /docs-grid -->
+
+    <div class="showcase-note fi">
+      <div class="showcase-note-icon">
+        <svg width="13" height="13" viewBox="0 0 14 14" fill="none">
+          <circle cx="7" cy="7" r="6" stroke="rgba(197,151,58,0.6)" stroke-width="1"/>
+          <path d="M7 4v3.5L9 9" stroke="rgba(197,151,58,0.6)" stroke-width="1" stroke-linecap="round"/>
+        </svg>
+      </div>
+      <p class="showcase-note-text">
+        <strong>These are illustrative covers.</strong> Each represents a real deliverable. Full non-confidential documents available on request &mdash; content is anonymized per customer confidentiality where applicable.
+      </p>
+    </div>
+
+  </div>
+</section>
+
+<!-- IN MY OWN WORDS -->
+<section class="iow-section" id="philosophy">
+  <div class="sec-header">
+    <span class="sec-num">06</span>
+    <h2 class="sec-title">In My Own <span>Words</span></h2>
+  </div>
+
+  <div class="iow-grid fi">
+    <div class="iow-manifesto">
+      <p class="iow-manifesto-text">
+        Most people's default work habits are reactive &mdash; you respond to what comes in,
+        you write what comes to mind, you do things the way you've always done them.
+        <em>AI forces you to break that pattern.</em> To use it well, you have to articulate
+        exactly what you're trying to accomplish. You can't think vaguely at an AI tool.
+        <em>The AI doesn't do the thinking &mdash; it makes the thinking visible so you can pressure-test it.</em>
+      </p>
+      <div class="iow-manifesto-attr">Vicky Park &middot; Solution Consultant &middot; 2026</div>
+    </div>
+
+  </div>
+</section>
+
+<!-- CONTACT + RESUME -->
+<div class="contact-bar" id="contact">
+  <div class="cb-left">
+    <div class="cb-eyebrow">Get in Touch</div>
+    <h2 class="cb-title">Let's build<br>something <em>real.</em></h2>
+    <p class="cb-sub">Open to roles at the intersection of AI, enterprise software, and customer-facing strategy &mdash; solution consulting, technical sales, AI product, or anywhere the work is genuinely hard and the impact is tangible.</p>
+    <div class="cb-links">
+      <a href="mailto:vicky.paark@gmail.com" class="cb-link cb-link-email">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
+        Contact Me!
+      </a>
+      <a href="https://linkedin.com/in/vicky-sunmi-park" target="_blank" class="cb-link cb-link-li">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"/><rect x="2" y="9" width="4" height="12"/><circle cx="4" cy="4" r="2"/></svg>
+        LinkedIn
+      </a>
+    </div>
+  </div>
+  <div class="cb-right">
+    <div class="cb-resume-icon">&#128196;</div>
+    <div class="cb-resume-title">Resume</div>
+    <div class="cb-resume-sub">Full history of professional experience, education, and skills<br>available to download below.</div>
+    <a href="Vicky_Park_Resume.pdf" download class="cb-resume-btn">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7,10 12,15 17,10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      Download Resume
+    </a>
+    <div class="cb-resume-note">PDF &middot; Vicky_Park_Resume.pdf</div>
+  </div>
+</div>
+
+<!-- FOOTER -->
+<footer>
+  <div>
+    <div class="f-name">Vicky Park</div>
+    <div class="f-meta">AI Leadership Portfolio &middot; Apr 2026 &middot; Los Angeles, CA</div>
+  </div>
+  <div class="f-right">
+    <div class="f-co">Oracle NetSuite</div>
+    <div class="f-role">Solution Consultant</div>
+  </div>
+</footer>
+
+<script>
+const obs = new IntersectionObserver(entries => {
+  entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
+}, { threshold: 0.08 });
+document.querySelectorAll('.fi').forEach(el => obs.observe(el));
+
+function switchDash(id) {
+  ['cgf','inv','efh','cab','pm','ap2','fcc'].forEach(d => {
+    document.getElementById('tab-' + d).classList.toggle('active', d === id);
+    document.getElementById('ctx-' + d).classList.toggle('active', d === id);
+    document.getElementById('frame-' + d).classList.toggle('active', d === id);
+  });
+}
+
+function flipCard(el) {
+  const group = el.closest('.fan-group');
+  const slides = group.querySelectorAll('.doc-slide');
+  const current = parseInt(group.dataset.slide || 0);
+  const next = (current + 1) % slides.length;
+  slides[current].classList.add('hidden');
+  slides[next].classList.remove('hidden');
+  group.dataset.slide = next;
+}
+</script>
+</body>
+</html>

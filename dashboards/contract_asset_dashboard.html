@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Contract Asset &amp; Progress Billing Dashboard</title>
+  <script src="https://cdn.jsdelivr.net/npm/react@18.2.0/umd/react.production.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/react-dom@18.2.0/umd/react-dom.production.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/prop-types@15.8.1/prop-types.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/recharts@2.12.0/umd/Recharts.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@babel/standalone@7.23.2/babel.min.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif; background: #F5FAFC; }
+    #root { min-height: 100vh; }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+  <script type="text/babel">
+    const { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } = Recharts;
+    const { useState } = React;
+
+    const ContractAssetDashboard = () => {
+      const [viewMode, setViewMode] = useState('all');
+
+      const ns = {
+        lightBlue: '#F5FAFC', darkBlue: '#194058', white: '#FFFFFF',
+        ocean180: '#13212C', ocean150: '#264759', ocean120: '#36677D',
+        ocean60: '#94BFCE', ocean30: '#E7F2F5', ocean10: '#F5FAFC',
+        mint: '#86D4C0', lavender: '#A89BC9', peach: '#FFB199',
+        coral: '#FF8675', sunlight: '#FFD580', rust: '#9E621A',
+        teal: '#1A789B', green: '#426D2A'
+      };
+
+      const cardFrame = {
+        padding: '6px', borderRadius: '13px',
+        background: 'conic-gradient(from 52deg at 50.81% 52.69%, #975d6b 0deg, #d4976c 36.34deg, #ffa5a5 72.69deg, #997faa 109deg, #376980 264.8deg, #975d6b 360deg)',
+        display: 'flex', marginBottom: '1.5rem',
+        boxShadow: '0px 6px 12px 0px rgba(0, 0, 0, 0.15)'
+      };
+
+      const cardInner = {
+        background: ns.white, borderRadius: '7px', padding: '1.5rem',
+        border: `1px solid ${ns.ocean30}`, boxShadow: '0 2px 6px rgba(0, 0, 0, 0.06)', flex: 1
+      };
+
+      const metricCard = (bgColor, textColor = ns.white) => ({
+        background: bgColor, color: textColor, borderRadius: '12px',
+        padding: '1.5rem', textAlign: 'center', boxShadow: '0 2px 8px rgba(19, 33, 44, 0.08)'
+      });
+
+      const contractData = [
+        { id: 'PROJ-001', customer: 'Altima Technology',     subsidiary: 'US West',  contractValue: 948000,   invoiced: 852049.55, pctComplete: 90,   earnedRevenue: 853200,   unbilled: 1150.45, overbilled: 0,     retainage: 47400,  changeOrders: { approved: 2, pending: 1, amount: 52000  }, status: 'IN_PROGRESS' },
+        { id: 'PROJ-002', customer: 'Hugo Limited',          subsidiary: 'US West',  contractValue: 1324000,  invoiced: 1324000,   pctComplete: 100,  earnedRevenue: 1324000,  unbilled: 0,       overbilled: 0,     retainage: 0,      changeOrders: { approved: 0, pending: 0, amount: 0      }, status: 'COMPLETED' },
+        { id: 'PROJ-003', customer: 'Pineapple Republic',    subsidiary: 'US East',  contractValue: 1311300,  invoiced: 1311300,   pctComplete: 100,  earnedRevenue: 1311300,  unbilled: 0,       overbilled: 0,     retainage: 0,      changeOrders: { approved: 1, pending: 0, amount: 111300 }, status: 'COMPLETED' },
+        { id: 'PROJ-004', customer: 'Red Rivers Consulting', subsidiary: 'US East',  contractValue: 860000,   invoiced: 860000,    pctComplete: 100,  earnedRevenue: 860000,   unbilled: 0,       overbilled: 0,     retainage: 0,      changeOrders: { approved: 0, pending: 0, amount: 0      }, status: 'COMPLETED' },
+        { id: 'PROJ-005', customer: 'Jupiter Technology',    subsidiary: 'US West',  contractValue: 840000,   invoiced: 840000,    pctComplete: 100,  earnedRevenue: 840000,   unbilled: 0,       overbilled: 0,     retainage: 0,      changeOrders: { approved: 2, pending: 0, amount: 140000 }, status: 'COMPLETED' },
+        { id: 'PROJ-006', customer: 'Macgruber Incorporated',subsidiary: 'US West',  contractValue: 506000,   invoiced: 500000,    pctComplete: 98.8, earnedRevenue: 500128,   unbilled: 128,     overbilled: 0,     retainage: 25300,  changeOrders: { approved: 0, pending: 0, amount: 0      }, status: 'SUBSTANTIAL_COMPLETION' },
+        { id: 'PROJ-007', customer: 'Jasper and Associates', subsidiary: 'US West',  contractValue: 396000,   invoiced: 396000,    pctComplete: 100,  earnedRevenue: 396000,   unbilled: 0,       overbilled: 0,     retainage: 0,      changeOrders: { approved: 0, pending: 0, amount: 0      }, status: 'COMPLETED' },
+        { id: 'PROJ-008', customer: 'Abbott Inc.',           subsidiary: 'US West',  contractValue: 300000,   invoiced: 289550.65, pctComplete: 96.5, earnedRevenue: 289500,   unbilled: 0,       overbilled: 50.65, retainage: 15000,  changeOrders: { approved: 1, pending: 0, amount: 50000  }, status: 'FINAL_BILLING' },
+        { id: 'PROJ-009', customer: 'Merkel Co.',            subsidiary: 'Germany',  contractValue: 450000,   invoiced: 428820,    pctComplete: 95.3, earnedRevenue: 428850,   unbilled: 30,      overbilled: 0,     retainage: 22500,  changeOrders: { approved: 2, pending: 1, amount: 75000  }, status: 'IN_PROGRESS' },
+        { id: 'PROJ-010', customer: 'Maxi Tech',             subsidiary: 'Germany',  contractValue: 350000,   invoiced: 332500,    pctComplete: 95.0, earnedRevenue: 332500,   unbilled: 0,       overbilled: 0,     retainage: 17500,  changeOrders: { approved: 1, pending: 0, amount: 50000  }, status: 'FINAL_BILLING' },
+        { id: 'PROJ-011', customer: 'Boueygoues UK',         subsidiary: 'UK',       contractValue: 280000,   invoiced: 266000,    pctComplete: 95.0, earnedRevenue: 266000,   unbilled: 0,       overbilled: 0,     retainage: 14000,  changeOrders: { approved: 0, pending: 0, amount: 0      }, status: 'FINAL_BILLING' },
+        { id: 'PROJ-012', customer: 'Global Information',    subsidiary: 'US West',  contractValue: 500000,   invoiced: 475000,    pctComplete: 95.0, earnedRevenue: 475000,   unbilled: 0,       overbilled: 0,     retainage: 25000,  changeOrders: { approved: 3, pending: 2, amount: 125000 }, status: 'IN_PROGRESS' },
+        { id: 'PROJ-013', customer: 'Cooper Software',       subsidiary: 'US West',  contractValue: 420000,   invoiced: 399000,    pctComplete: 95.0, earnedRevenue: 399000,   unbilled: 0,       overbilled: 0,     retainage: 21000,  changeOrders: { approved: 1, pending: 1, amount: 70000  }, status: 'IN_PROGRESS' },
+        { id: 'PROJ-014', customer: 'Deutz AG',              subsidiary: 'Germany',  contractValue: 380000,   invoiced: 361000,    pctComplete: 95.0, earnedRevenue: 361000,   unbilled: 0,       overbilled: 0,     retainage: 19000,  changeOrders: { approved: 0, pending: 1, amount: 38000  }, status: 'IN_PROGRESS' },
+        { id: 'PROJ-015', customer: 'Westphal AG',           subsidiary: 'Germany',  contractValue: 325000,   invoiced: 308750,    pctComplete: 95.0, earnedRevenue: 308750,   unbilled: 0,       overbilled: 0,     retainage: 16250,  changeOrders: { approved: 1, pending: 0, amount: 25000  }, status: 'FINAL_BILLING' }
+      ];
+
+      const totalContractValue = contractData.reduce((sum, c) => sum + c.contractValue, 0);
+      const totalInvoiced      = contractData.reduce((sum, c) => sum + c.invoiced, 0);
+      const totalEarned        = contractData.reduce((sum, c) => sum + c.earnedRevenue, 0);
+      const totalUnbilled      = contractData.reduce((sum, c) => sum + c.unbilled, 0);
+      const totalOverbilled    = contractData.reduce((sum, c) => sum + c.overbilled, 0);
+      const totalRetainage     = contractData.reduce((sum, c) => sum + c.retainage, 0);
+      const totalChangeOrders  = contractData.reduce((sum, c) => sum + c.changeOrders.amount, 0);
+      const avgCompletion      = contractData.reduce((sum, c) => sum + c.pctComplete, 0) / contractData.length;
+
+      const filteredContracts = viewMode === 'all'
+        ? contractData
+        : viewMode === 'active'
+          ? contractData.filter(c => c.status !== 'COMPLETED')
+          : contractData.filter(c => c.subsidiary === viewMode);
+
+      const formatCurrency = (val) => {
+        if (Math.abs(val) >= 1000000) return `$${(val / 1000000).toFixed(1)}M`;
+        if (Math.abs(val) >= 1000) return `$${(val / 1000).toFixed(0)}K`;
+        return `$${val.toFixed(0)}`;
+      };
+
+      const getHealthIndicator = (contract) => {
+        if (contract.unbilled > contract.contractValue * 0.10)              return { label: 'UNDER-BILLED',  color: ns.coral,    priority: 'HIGH'     };
+        if (contract.overbilled > contract.contractValue * 0.05)            return { label: 'OVER-BILLED',   color: ns.sunlight, priority: 'MONITOR'  };
+        if (contract.status === 'FINAL_BILLING' && contract.retainage > 0)  return { label: 'RETAINAGE DUE', color: ns.mint,     priority: 'BILLING'  };
+        if (contract.changeOrders.pending > 0)                              return { label: 'CO PENDING',    color: ns.sunlight, priority: 'APPROVAL' };
+        if (contract.pctComplete === 100)                                    return { label: 'COMPLETE',      color: ns.mint,     priority: 'NONE'     };
+        return                                                                      { label: 'ON TRACK',     color: ns.mint,     priority: 'NONE'     };
+      };
+
+      const btnStyle = (active) => ({
+        background: active ? ns.ocean120 : ns.white, color: active ? ns.white : ns.ocean120,
+        border: `1px solid ${ns.ocean120}`, borderRadius: '8px', padding: '0.5rem 1rem',
+        fontSize: '0.875rem', fontWeight: 500, cursor: 'pointer', fontFamily: 'inherit',
+        marginRight: '0.5rem', marginBottom: '0.5rem'
+      });
+
+      const tooltipStyle = { background: ns.white, border: `1px solid ${ns.ocean30}`, borderRadius: '6px', color: ns.ocean180, boxShadow: '0 2px 6px rgba(0,0,0,0.06)' };
+
+      const subsidiaryData = ['Germany', 'US West', 'UK', 'US East'].map(sub => {
+        const contracts = contractData.filter(c => c.subsidiary === sub);
+        return {
+          subsidiary: sub,
+          totalValue:    contracts.reduce((sum, c) => sum + c.contractValue, 0),
+          totalInvoiced: contracts.reduce((sum, c) => sum + c.invoiced, 0),
+          totalRetainage:contracts.reduce((sum, c) => sum + c.retainage, 0)
+        };
+      }).filter(s => s.totalValue > 0);
+
+      return (
+        <div style={{ fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif', minHeight: '100vh' }}>
+
+          {/* HEADER */}
+          <section style={{ background: ns.lightBlue, padding: '3rem 2rem' }}>
+            <div style={{ maxWidth: '1600px', margin: '0 auto' }}>
+              <h1 style={{ color: ns.ocean180, fontSize: '2.25rem', fontWeight: 600, marginBottom: '0.5rem' }}>
+                Contract Asset/Liability &amp; Progress Billing Dashboard
+              </h1>
+              <p style={{ color: ns.ocean150, fontSize: '1rem', marginBottom: '2rem' }}>
+                GAAP-Compliant Revenue Recognition and Cash Flow Tracking
+              </p>
+
+              <div style={{ display: 'grid', gap: '1.5rem', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', marginBottom: '2rem' }}>
+                {[
+                  { label: 'Total Contract Value',  value: formatCurrency(totalContractValue),  sub: `${contractData.length} Contracts`,                                  bg: ns.ocean120 },
+                  { label: 'Total Invoiced',        value: formatCurrency(totalInvoiced),       sub: `${((totalInvoiced / totalContractValue) * 100).toFixed(1)}% of Total`, bg: ns.mint },
+                  { label: 'Unbilled Revenue',      value: formatCurrency(totalUnbilled),       sub: totalUnbilled > 100000 ? 'BILLING NEEDED' : 'Minimal',               bg: totalUnbilled > 100000 ? ns.coral : ns.lavender },
+                  { label: 'Retainage Held',        value: formatCurrency(totalRetainage),      sub: 'Release on Completion',                                              bg: ns.peach },
+                  { label: 'Change Orders',         value: formatCurrency(totalChangeOrders),   sub: `${contractData.reduce((s, c) => s + c.changeOrders.pending, 0)} Pending`, bg: ns.sunlight, textColor: ns.ocean180 },
+                  { label: 'Avg Completion',        value: `${avgCompletion.toFixed(1)}%`,      sub: 'Portfolio Average',                                                  bg: avgCompletion >= 95 ? ns.mint : ns.teal }
+                ].map((m, i) => (
+                  <div key={i} style={{ ...metricCard(m.bg, m.textColor || ns.white) }}>
+                    <div style={{ fontSize: '0.875rem', marginBottom: '0.5rem', opacity: 0.9 }}>{m.label}</div>
+                    <div style={{ fontSize: '2rem', fontWeight: 600 }}>{m.value}</div>
+                    <div style={{ fontSize: '0.75rem', opacity: 0.8, marginTop: '0.25rem' }}>{m.sub}</div>
+                  </div>
+                ))}
+              </div>
+
+              <div style={{ marginBottom: '0.75rem', color: ns.ocean180, fontWeight: 600, fontSize: '0.875rem' }}>View:</div>
+              {[
+                { mode: 'all',      label: 'All Contracts' },
+                { mode: 'active',   label: 'Active Only' },
+                { mode: 'Germany',  label: 'Germany' },
+                { mode: 'US West',  label: 'US West' },
+                { mode: 'UK',       label: 'UK' },
+                { mode: 'US East',  label: 'US East' }
+              ].map(b => (
+                <button key={b.mode} onClick={() => setViewMode(b.mode)} style={btnStyle(viewMode === b.mode)}>
+                  {b.label}
+                </button>
+              ))}
+            </div>
+          </section>
+
+          {/* CHART SECTION */}
+          <section style={{ background: ns.darkBlue, padding: '3rem 2rem' }}>
+            <div style={{ maxWidth: '1600px', margin: '0 auto' }}>
+              <div style={{ display: 'flex', gap: '1rem', marginBottom: '2rem', flexWrap: 'wrap' }}>
+                <div style={{ flex: 1, background: ns.green,  color: ns.white, padding: '0.75rem 1rem', borderRadius: '4px', fontSize: '0.875rem', fontWeight: 500 }}>
+                  Strong Progress: 95% average completion across portfolio
+                </div>
+                <div style={{ flex: 1, background: ns.teal, color: ns.white, padding: '0.75rem 1rem', borderRadius: '4px', fontSize: '0.875rem', fontWeight: 500 }}>
+                  Cash Opportunity: {formatCurrency(totalRetainage)} in retainage available
+                </div>
+              </div>
+              <h2 style={{ color: ns.white, fontSize: '1.5rem', fontWeight: 600, marginBottom: '1.5rem' }}>Billings vs Revenue Recognition</h2>
+              <div style={cardFrame}>
+                <div style={cardInner}>
+                  <h3 style={{ color: ns.ocean180, fontSize: '1.125rem', fontWeight: 600, marginBottom: '1rem' }}>Contract Performance by Subsidiary</h3>
+                  <ResponsiveContainer width="100%" height={300}>
+                    <BarChart data={subsidiaryData}>
+                      <CartesianGrid strokeDasharray="3 3" stroke={ns.ocean30} />
+                      <XAxis dataKey="subsidiary" stroke={ns.ocean150} />
+                      <YAxis stroke={ns.ocean150} tickFormatter={formatCurrency} />
+                      <Tooltip contentStyle={tooltipStyle} formatter={(val) => formatCurrency(val)} />
+                      <Legend />
+                      <Bar dataKey="totalValue"    fill={ns.ocean120} name="Contract Value" />
+                      <Bar dataKey="totalInvoiced" fill={ns.mint}     name="Invoiced to Date" />
+                      <Bar dataKey="totalRetainage"fill={ns.peach}    name="Retainage Held" />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          {/* TABLE SECTION */}
+          <section style={{ background: ns.lightBlue, padding: '3rem 2rem' }}>
+            <div style={{ maxWidth: '1600px', margin: '0 auto' }}>
+              <h2 style={{ color: ns.ocean180, fontSize: '1.5rem', fontWeight: 600, marginBottom: '1.5rem' }}>Contract Progress and Billing Status</h2>
+              <div style={cardFrame}>
+                <div style={cardInner}>
+                  <div style={{ overflowX: 'auto' }}>
+                    <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '1400px' }}>
+                      <thead>
+                        <tr style={{ background: ns.ocean10 }}>
+                          {['Project ID','Customer','Subsidiary','Contract Value','% Complete','Earned Revenue','Invoiced','Unbilled','Over-billed','Retainage','Change Orders','Health Status'].map((h, i) => (
+                            <th key={i} style={{
+                              padding: '1rem', textAlign: i >= 3 && i <= 9 ? 'right' : i === 10 || i === 11 ? 'center' : 'left',
+                              fontWeight: 600, color: ns.ocean150, borderBottom: `1px solid ${ns.ocean30}`,
+                              fontSize: '0.875rem',
+                              ...(i === 0 ? { position: 'sticky', left: 0, background: ns.ocean10, zIndex: 10 } : {})
+                            }}>{h}</th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {filteredContracts.map((contract, idx) => {
+                          const health = getHealthIndicator(contract);
+                          const rowBg = idx % 2 === 0 ? ns.white : ns.ocean10;
+                          return (
+                            <tr key={idx} style={{ background: rowBg, borderBottom: `1px solid ${ns.ocean30}` }}>
+                              <td style={{ padding: '1rem', color: ns.ocean180, fontSize: '0.875rem', fontWeight: 600, position: 'sticky', left: 0, background: rowBg, zIndex: 5 }}>{contract.id}</td>
+                              <td style={{ padding: '1rem', color: ns.ocean150, fontSize: '0.875rem' }}>{contract.customer}</td>
+                              <td style={{ padding: '1rem', textAlign: 'center', color: ns.ocean150, fontSize: '0.875rem' }}>{contract.subsidiary}</td>
+                              <td style={{ padding: '1rem', textAlign: 'right', color: ns.ocean150, fontSize: '0.875rem' }}>{formatCurrency(contract.contractValue)}</td>
+                              <td style={{ padding: '1rem', textAlign: 'right', fontSize: '0.875rem' }}>
+                                <div style={{ width: '100%', background: ns.ocean30, borderRadius: '4px', height: '20px', position: 'relative', overflow: 'hidden' }}>
+                                  <div style={{ width: `${contract.pctComplete}%`, background: contract.pctComplete === 100 ? ns.mint : contract.pctComplete >= 90 ? ns.teal : ns.ocean120, height: '100%', borderRadius: '4px' }} />
+                                  <span style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', fontSize: '0.75rem', fontWeight: 600, color: ns.ocean180 }}>{contract.pctComplete}%</span>
+                                </div>
+                              </td>
+                              <td style={{ padding: '1rem', textAlign: 'right', color: ns.mint, fontSize: '0.875rem', fontWeight: 600 }}>{formatCurrency(contract.earnedRevenue)}</td>
+                              <td style={{ padding: '1rem', textAlign: 'right', color: ns.ocean150, fontSize: '0.875rem' }}>{formatCurrency(contract.invoiced)}</td>
+                              <td style={{ padding: '1rem', textAlign: 'right', color: contract.unbilled > 0 ? ns.coral : ns.ocean150, fontSize: '0.875rem', fontWeight: contract.unbilled > 0 ? 600 : 400 }}>{formatCurrency(contract.unbilled)}</td>
+                              <td style={{ padding: '1rem', textAlign: 'right', color: contract.overbilled > 0 ? ns.sunlight : ns.ocean150, fontSize: '0.875rem' }}>{formatCurrency(contract.overbilled)}</td>
+                              <td style={{ padding: '1rem', textAlign: 'right', color: ns.peach, fontSize: '0.875rem', fontWeight: 600 }}>{formatCurrency(contract.retainage)}</td>
+                              <td style={{ padding: '1rem', textAlign: 'center', fontSize: '0.75rem', color: ns.ocean150 }}>
+                                <div>{contract.changeOrders.approved} approved</div>
+                                {contract.changeOrders.pending > 0 && <div style={{ color: ns.sunlight, fontWeight: 600 }}>{contract.changeOrders.pending} pending</div>}
+                                <div style={{ fontSize: '0.7rem', marginTop: '0.25rem' }}>{formatCurrency(contract.changeOrders.amount)}</div>
+                              </td>
+                              <td style={{ padding: '1rem', textAlign: 'center', fontSize: '0.75rem' }}>
+                                <span style={{
+                                  padding: '0.25rem 0.75rem', borderRadius: '16px',
+                                  background: health.color,
+                                  color: health.color === ns.sunlight ? ns.ocean180 : ns.white,
+                                  fontWeight: 500, textTransform: 'uppercase', whiteSpace: 'nowrap', display: 'inline-block'
+                                }}>{health.label}</span>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                        <tr style={{ background: ns.ocean120 }}>
+                          <td colSpan="3" style={{ padding: '1rem', color: ns.white, fontSize: '0.875rem', fontWeight: 600 }}>TOTAL</td>
+                          <td style={{ padding: '1rem', textAlign: 'right', color: ns.white, fontSize: '0.875rem', fontWeight: 600 }}>{formatCurrency(filteredContracts.reduce((s, c) => s + c.contractValue, 0))}</td>
+                          <td style={{ padding: '1rem', textAlign: 'right', color: ns.white, fontSize: '0.875rem', fontWeight: 600 }}>{(filteredContracts.reduce((s, c) => s + c.pctComplete, 0) / filteredContracts.length).toFixed(1)}%</td>
+                          <td style={{ padding: '1rem', textAlign: 'right', color: ns.white, fontSize: '0.875rem', fontWeight: 600 }}>{formatCurrency(filteredContracts.reduce((s, c) => s + c.earnedRevenue, 0))}</td>
+                          <td style={{ padding: '1rem', textAlign: 'right', color: ns.white, fontSize: '0.875rem', fontWeight: 600 }}>{formatCurrency(filteredContracts.reduce((s, c) => s + c.invoiced, 0))}</td>
+                          <td style={{ padding: '1rem', textAlign: 'right', color: ns.white, fontSize: '0.875rem', fontWeight: 600 }}>{formatCurrency(filteredContracts.reduce((s, c) => s + c.unbilled, 0))}</td>
+                          <td style={{ padding: '1rem', textAlign: 'right', color: ns.white, fontSize: '0.875rem', fontWeight: 600 }}>{formatCurrency(filteredContracts.reduce((s, c) => s + c.overbilled, 0))}</td>
+                          <td style={{ padding: '1rem', textAlign: 'right', color: ns.white, fontSize: '0.875rem', fontWeight: 600 }}>{formatCurrency(filteredContracts.reduce((s, c) => s + c.retainage, 0))}</td>
+                          <td colSpan="2" style={{ padding: '1rem', textAlign: 'center', color: ns.white, fontSize: '0.875rem', fontWeight: 600 }}>
+                            {filteredContracts.reduce((s, c) => s + c.changeOrders.approved + c.changeOrders.pending, 0)} total COs
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          {/* INSIGHTS SECTION */}
+          <section style={{ background: ns.darkBlue, padding: '3rem 2rem' }}>
+            <div style={{ maxWidth: '1600px', margin: '0 auto' }}>
+              <div style={{ display: 'flex', gap: '1rem', marginBottom: '2rem', flexWrap: 'wrap' }}>
+                <div style={{ flex: 1, background: ns.rust, color: ns.white, padding: '0.75rem 1rem', borderRadius: '4px', fontSize: '0.875rem', fontWeight: 500 }}>
+                  Action: Process final billing on Altima contract — $1.2K unbilled
+                </div>
+                <div style={{ flex: 1, background: ns.teal, color: ns.white, padding: '0.75rem 1rem', borderRadius: '4px', fontSize: '0.875rem', fontWeight: 500 }}>
+                  Opportunity: Release {formatCurrency(totalRetainage)} retainage on completed projects
+                </div>
+              </div>
+              <h2 style={{ color: ns.white, fontSize: '1.5rem', fontWeight: 600, marginBottom: '1.5rem' }}>Revenue Recognition &amp; Cash Flow Insights</h2>
+              <div style={cardFrame}>
+                <div style={cardInner}>
+                  <h3 style={{ color: ns.ocean180, fontSize: '1.125rem', fontWeight: 600, marginBottom: '1rem' }}>✅ GAAP Compliance Summary</h3>
+                  <div style={{ color: ns.ocean150, fontSize: '0.875rem', lineHeight: '1.8' }}>
+                    <strong>Revenue Recognition Method:</strong> Percentage-of-completion (POC)<br /><br />
+                    <strong>Key Findings:</strong><br />
+                    • <strong>Contract Assets:</strong> {formatCurrency(totalUnbilled)} in unbilled revenue<br />
+                    • <strong>Contract Liabilities:</strong> {formatCurrency(totalOverbilled)} overbilled<br />
+                    • <strong>Retainage Receivable:</strong> {formatCurrency(totalRetainage)} held<br />
+                    • <strong>Average Completion:</strong> {avgCompletion.toFixed(1)}% across all contracts<br /><br />
+                    <strong>Accounting Treatment:</strong><br />
+                    • Revenue recognized based on % completion (POC method)<br />
+                    • Unbilled amounts recorded as Contract Assets on balance sheet<br />
+                    • Over-billings recorded as Contract Liabilities<br />
+                    • Retainage tracked separately as restricted AR<br />
+                    • Change orders recognized upon customer approval
+                  </div>
+                </div>
+              </div>
+              <div style={cardFrame}>
+                <div style={cardInner}>
+                  <h3 style={{ color: ns.ocean180, fontSize: '1.125rem', fontWeight: 600, marginBottom: '1rem' }}>💰 Cash Flow Optimization Opportunities</h3>
+                  <div style={{ color: ns.ocean150, fontSize: '0.875rem', lineHeight: '1.8' }}>
+                    <strong>Immediate Actions (Next 30 Days):</strong><br /><br />
+                    <strong>1. Release Retainage on Completed Projects</strong><br />
+                    • Hugo Limited, Pineapple Republic, Red Rivers, Jupiter Tech, Jasper — process release documentation<br />
+                    • Impact: Release up to {formatCurrency(totalRetainage)} in held funds<br /><br />
+                    <strong>2. Bill Unbilled Revenue</strong><br />
+                    • Altima Technology: {formatCurrency(contractData.find(c => c.customer === 'Altima Technology').unbilled)} unbilled<br />
+                    • Macgruber Incorporated: $128 unbilled (minor)<br />
+                    • Impact: Convert {formatCurrency(totalUnbilled)} to AR immediately<br /><br />
+                    <strong>3. Accelerate Change Order Approvals</strong><br />
+                    • 5 contracts have pending change orders<br />
+                    • Merkel Co., Global Information, Cooper Software, Deutz AG<br />
+                    • Impact: Secure approval for ~$114K in additional contract value<br /><br />
+                    <strong>4. Invoice Active Projects at Next Milestone</strong><br />
+                    • 8 projects at 95%+ completion ready for next progress billing<br />
+                    • Target billing date: Within 5 days of month-end
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          {/* FOOTER */}
+          <section style={{ background: ns.lightBlue, padding: '2rem', borderTop: `1px solid ${ns.ocean30}` }}>
+            <div style={{ maxWidth: '1600px', margin: '0 auto', textAlign: 'center' }}>
+              <div style={{ color: ns.ocean150, fontSize: '0.875rem' }}>
+                <strong>Contract Portfolio:</strong> {contractData.length} major contracts &nbsp;|&nbsp;
+                <strong> Total Value:</strong> {formatCurrency(totalContractValue)} &nbsp;|&nbsp;
+                <strong> Avg Completion:</strong> {avgCompletion.toFixed(1)}% &nbsp;|&nbsp;
+                <strong> Review Frequency:</strong> Weekly
+              </div>
+            </div>
+          </section>
+
+        </div>
+      );
+    };
+
+    ReactDOM.createRoot(document.getElementById('root')).render(
+      React.createElement(ContractAssetDashboard, null)
+    );
+  </script>
+</body>
+</html>

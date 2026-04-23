@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Financial Close Tracking</title>
+<script src="https://cdn.jsdelivr.net/npm/react@18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/react-dom@18.2.0/umd/react-dom.production.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@babel/standalone@7.23.2/babel.min.js"></script>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif; background: #F1EFED; color: #13212C; }
+@media print { .no-print, button, select { display: none !important; } .card { box-shadow: none !important; page-break-inside: avoid; } tbody tr:nth-child(even) { background: #F5FAFC !important; } }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const { useState, useMemo } = React;
+
+const ns = {
+  ocean180: '#13212C', ocean150: '#264759', ocean120: '#36677D',
+  ocean60: '#94BFCE', ocean30: '#E7F2F5', ocean10: '#F5FAFC',
+  pine: '#86B596', rose: '#FF8675', yellow: '#E2C06B',
+  neutral: '#F1EFED', white: '#FFFFFF'
+};
+
+// ── Inline SVG icons ──
+const Icon = ({ d, size = 16, color = 'currentColor', style: s }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none"
+    stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+    style={{ flexShrink: 0, ...s }}>
+    <path d={d} />
+  </svg>
+);
+const CheckSquare   = ({ size=16, color='currentColor' }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+    <polyline points="9 11 12 14 22 4" /><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" />
+  </svg>
+);
+const Square        = (p) => <Icon {...p} d="M3 3h18v18H3z" />;
+const AlertCircle   = (p) => <Icon {...p} d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zM12 8v4M12 16h.01" />;
+const AlertTriangle = (p) => <Icon {...p} d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0zM12 9v4M12 17h.01" />;
+const Clock         = (p) => <Icon {...p} d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zM12 6v6l4 2" />;
+const User          = (p) => <Icon {...p} d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z" />;
+const FileText      = (p) => <Icon {...p} d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8zM14 2v6h6M16 13H8M16 17H8M10 9H8" />;
+const ChevronDown   = (p) => <Icon {...p} d="M6 9l6 6 6-6" />;
+const ChevronRight  = (p) => <Icon {...p} d="M9 18l6-6-6-6" />;
+const TrendingUp    = (p) => <Icon {...p} d="M22 7l-8.5 8.5-5-5L2 17M16 7h6v6" />;
+const ExternalLink  = (p) => <Icon {...p} d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6M15 3h6v6M10 14L21 3" />;
+
+// ── Anonymized data ──
+const employees = [
+  { id: 1, name: 'A. Kwan'       },
+  { id: 2, name: 'A. Minister'   },
+  { id: 3, name: 'A. Green'      },
+  { id: 4, name: 'A. Sheffield'  },
+  { id: 5, name: 'A. Black'      },
+  { id: 6, name: 'A. Traynor'    },
+];
+
+const transactionData = {
+  totalTransactions: 419,
+  invoices: 83,
+  bills: 61,
+  journals: 26,
+  expenseReports: 8,
+  payments: 241
+};
+
+const invoiceData = [
+  { id: 1,  tranid: '311',  date: '12/31/2025', customer: 'Nexus Corp',          amount: 45230, status: 'Open'   },
+  { id: 2,  tranid: '343',  date: '12/31/2025', customer: 'Nexus Corp',          amount: 38750, status: 'Open'   },
+  { id: 3,  tranid: '268',  date: '12/31/2025', customer: 'Fernhill Solutions',  amount: 22100, status: 'Open'   },
+  { id: 4,  tranid: '266',  date: '12/27/2025', customer: 'Falcon Systems',      amount: 15800, status: 'Open'   },
+  { id: 5,  tranid: '342',  date: '12/25/2025', customer: 'Summit Staffing',     amount: 67300, status: 'Billed' },
+  { id: 6,  tranid: '1979', date: '12/25/2025', customer: 'Apex Advisory',       amount: 12500, status: 'Open'   },
+  { id: 7,  tranid: '341',  date: '12/25/2025', customer: 'ProStaff Inc',        amount: 54200, status: 'Billed' },
+  { id: 8,  tranid: '264',  date: '12/25/2025', customer: 'Global Information',  amount: 18900, status: 'Open'   },
+  { id: 9,  tranid: '265',  date: '12/25/2025', customer: 'Manchester Mfg',      amount: 31400, status: 'Open'   },
+  { id: 10, tranid: '260',  date: '12/24/2025', customer: 'Jupiter Technology',  amount: 42800, status: 'Open'   },
+  { id: 11, tranid: '269',  date: '12/21/2025', customer: 'Vertex Technology',   amount: 28600, status: 'Billed' },
+  { id: 12, tranid: '279',  date: '12/21/2025', customer: 'Nexus Corp',          amount: 35900, status: 'Billed' },
+  { id: 13, tranid: '259',  date: '12/21/2025', customer: 'Apex Software',       amount: 19200, status: 'Open'   },
+  { id: 14, tranid: '278',  date: '12/19/2025', customer: 'Vertex Technology',   amount: 46700, status: 'Billed' },
+  { id: 15, tranid: '267',  date: '12/19/2025', customer: 'Apex Software',       amount: 23400, status: 'Open'   },
+  { id: 16, tranid: '261',  date: '12/18/2025', customer: 'Delta Consulting',    amount: 33500, status: 'Open'   },
+  { id: 17, tranid: '263',  date: '12/18/2025', customer: 'Enfield LLC',         amount: 41200, status: 'Open'   },
+  { id: 18, tranid: '262',  date: '12/18/2025', customer: 'Apex Software',       amount: 27800, status: 'Open'   },
+  { id: 19, tranid: '1943', date: '12/16/2025', customer: 'Davis Supplies',      amount: 16300, status: 'Open'   },
+  { id: 20, tranid: '1942', date: '12/16/2025', customer: 'Apex Software',       amount: 38900, status: 'Open'   },
+];
+
+const stages = [
+  { id: 1, name: 'Pre-Close Preparation', days: 'Days -3 to -1' },
+  { id: 2, name: 'Period Closing',         days: 'Day 0'         },
+  { id: 3, name: 'Revenue Recognition',   days: 'Days 1-2'      },
+  { id: 4, name: 'Reconciliations',       days: 'Days 1-3'      },
+  { id: 5, name: 'Financial Reporting',   days: 'Days 3-4'      },
+  { id: 6, name: 'Review & Approval',     days: 'Days 4-5'      },
+];
+
+const initialTasks = [
+  // Stage 1
+  { id: 1,  stage: 1, name: 'Review unbilled time entries',                    owner: employees[0].name, dueDate: '11/27/2025', status: 'complete',    priority: 'high',   daysUntil: -21, description: 'Review all unbilled time entries for December period' },
+  { id: 2,  stage: 1, name: 'Reconcile bank statements',                       owner: employees[4].name, dueDate: '11/28/2025', status: 'complete',    priority: 'high',   daysUntil: -20, description: 'Complete bank reconciliation for all accounts' },
+  { id: 3,  stage: 1, name: 'Review open POs and receipts',                    owner: employees[0].name, dueDate: '11/29/2025', status: 'in-progress', priority: 'medium', daysUntil: -19, description: 'Review all open purchase orders for period' },
+  { id: 4,  stage: 1, name: 'Send payment reminders to customers',             owner: employees[5].name, dueDate: '11/29/2025', status: 'complete',    priority: 'medium', daysUntil: -19, description: 'Send reminders for outstanding customer invoices' },
+  { id: 5,  stage: 1, name: 'Review ' + transactionData.invoices + ' invoices for approval', owner: employees[3].name, dueDate: '11/29/2025', status: 'in-progress', priority: 'high', daysUntil: -19, description: 'Review ' + transactionData.invoices + ' customer invoices from December' },
+  // Stage 2
+  { id: 6,  stage: 2, name: 'Lock period (Dec 2025)',                          owner: employees[4].name, dueDate: '12/31/2025', status: 'not-started', priority: 'high',   daysUntil: 13,  description: 'Lock December 2025 accounting period' },
+  { id: 7,  stage: 2, name: 'Run trial balance',                               owner: employees[4].name, dueDate: '12/31/2025', status: 'not-started', priority: 'high',   daysUntil: 13,  description: 'Generate trial balance report for December' },
+  { id: 8,  stage: 2, name: 'Review suspense accounts',                        owner: employees[0].name, dueDate: '12/31/2025', status: 'not-started', priority: 'medium', daysUntil: 13,  description: 'Review all suspense and clearing accounts' },
+  { id: 9,  stage: 2, name: 'Post ' + transactionData.journals + ' recurring journal entries', owner: employees[3].name, dueDate: '12/31/2025', status: 'not-started', priority: 'high', daysUntil: 13, description: 'Post ' + transactionData.journals + ' recurring journal entries for December' },
+  { id: 10, stage: 2, name: 'Review intercompany transactions',                owner: employees[5].name, dueDate: '12/31/2025', status: 'not-started', priority: 'medium', daysUntil: 13,  description: 'Review all intercompany transactions for elimination' },
+  // Stage 3
+  { id: 11, stage: 3, name: 'Review revenue arrangements',                     owner: employees[0].name, dueDate: '01/02/2026', status: 'not-started', priority: 'high',   daysUntil: 15,  description: 'Review revenue arrangements from December' },
+  { id: 12, stage: 3, name: 'Post revenue journal entries',                    owner: employees[3].name, dueDate: '01/02/2026', status: 'not-started', priority: 'high',   daysUntil: 15,  description: 'Post revenue recognition journal entries' },
+  { id: 13, stage: 3, name: 'Validate deferred revenue balances',              owner: employees[4].name, dueDate: '01/03/2026', status: 'not-started', priority: 'medium', daysUntil: 16,  description: 'Validate deferred revenue account balances' },
+  { id: 14, stage: 3, name: 'Review contract modifications',                   owner: employees[5].name, dueDate: '01/03/2026', status: 'not-started', priority: 'low',    daysUntil: 16,  description: 'Review all modified revenue contracts' },
+  // Stage 4
+  { id: 15, stage: 4, name: 'Bank reconciliation — Main Operating',            owner: employees[4].name, dueDate: '01/02/2026', status: 'not-started', priority: 'high',   daysUntil: 15,  description: 'Reconcile main operating bank account' },
+  { id: 16, stage: 4, name: 'Bank reconciliation — Payroll Account',           owner: employees[4].name, dueDate: '01/02/2026', status: 'not-started', priority: 'high',   daysUntil: 15,  description: 'Reconcile payroll bank account' },
+  { id: 17, stage: 4, name: 'Credit card reconciliations',                     owner: employees[0].name, dueDate: '01/03/2026', status: 'not-started', priority: 'medium', daysUntil: 16,  description: 'Reconcile all corporate credit card accounts' },
+  { id: 18, stage: 4, name: 'Prepaid expense amortization',                    owner: employees[3].name, dueDate: '01/03/2026', status: 'not-started', priority: 'medium', daysUntil: 16,  description: 'Record prepaid expense amortization' },
+  { id: 19, stage: 4, name: 'Accrued expenses review',                         owner: employees[5].name, dueDate: '01/04/2026', status: 'not-started', priority: 'medium', daysUntil: 17,  description: 'Review and update accrued expense accounts' },
+  { id: 20, stage: 4, name: 'Fixed asset depreciation',                        owner: employees[3].name, dueDate: '01/04/2026', status: 'not-started', priority: 'high',   daysUntil: 17,  description: 'Run depreciation for fixed assets' },
+  { id: 21, stage: 4, name: 'Inventory valuation',                             owner: employees[5].name, dueDate: '01/04/2026', status: 'not-started', priority: 'high',   daysUntil: 17,  description: 'Validate inventory valuation and costing' },
+  { id: 22, stage: 4, name: 'Intercompany eliminations',                       owner: employees[4].name, dueDate: '01/04/2026', status: 'blocked',     priority: 'high',   daysUntil: 17,  description: 'Create intercompany elimination entries' },
+  // Stage 5
+  { id: 23, stage: 5, name: 'Generate P&L by department',                      owner: employees[4].name, dueDate: '01/04/2026', status: 'not-started', priority: 'high',   daysUntil: 17,  description: 'Generate departmental P&L statements' },
+  { id: 24, stage: 5, name: 'Generate balance sheet',                          owner: employees[4].name, dueDate: '01/04/2026', status: 'not-started', priority: 'high',   daysUntil: 17,  description: 'Generate consolidated balance sheet' },
+  { id: 25, stage: 5, name: 'Generate cash flow statement',                    owner: employees[0].name, dueDate: '01/05/2026', status: 'not-started', priority: 'high',   daysUntil: 18,  description: 'Generate statement of cash flows' },
+  { id: 26, stage: 5, name: 'Prepare board package',                           owner: employees[3].name, dueDate: '01/05/2026', status: 'not-started', priority: 'medium', daysUntil: 18,  description: 'Compile board meeting financial package' },
+  { id: 27, stage: 5, name: 'Review key metrics / KPIs',                       owner: employees[5].name, dueDate: '01/05/2026', status: 'not-started', priority: 'medium', daysUntil: 18,  description: 'Review all key performance indicators' },
+  // Stage 6
+  { id: 28, stage: 6, name: 'Controller review',                               owner: employees[4].name, dueDate: '01/05/2026', status: 'not-started', priority: 'high',   daysUntil: 18,  description: 'Controller sign-off on financial statements' },
+  { id: 29, stage: 6, name: 'CFO review',                                      owner: employees[0].name, dueDate: '01/06/2026', status: 'not-started', priority: 'high',   daysUntil: 19,  description: 'CFO final approval of financials' },
+  { id: 30, stage: 6, name: 'Audit committee package',                         owner: employees[3].name, dueDate: '01/06/2026', status: 'not-started', priority: 'medium', daysUntil: 19,  description: 'Prepare audit committee documentation' },
+  { id: 31, stage: 6, name: 'Final period lock',                               owner: employees[4].name, dueDate: '01/06/2026', status: 'not-started', priority: 'high',   daysUntil: 19,  description: 'Final lock of December 2025 period' },
+];
+
+// ── Helpers ──
+const fmtCurrency = (v) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(v);
+
+const StatusBadge = ({ status, small }) => {
+  const map = {
+    'complete':    { bg: '#86B596', color: '#FFFFFF',  label: 'COMPLETE'    },
+    'in-progress': { bg: '#E2C06B', color: '#13212C',  label: 'IN PROGRESS' },
+    'not-started': { bg: '#36677D', color: '#FFFFFF',  label: 'NOT STARTED' },
+    'blocked':     { bg: '#FF8675', color: '#FFFFFF',  label: 'BLOCKED'     },
+  };
+  const s = map[status] || map['not-started'];
+  return (
+    <span style={{ padding: small ? '0.15rem 0.5rem' : '0.25rem 0.75rem', borderRadius: '12px', fontSize: '0.75rem', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.025em', display: 'inline-block', whiteSpace: 'nowrap', background: s.bg, color: s.color }}>
+      {s.label}
+    </span>
+  );
+};
+
+const PriorityBadge = ({ priority }) => {
+  const map = { high: { bg: ns.rose, color: ns.white, label: 'HIGH' }, medium: { bg: ns.yellow, color: ns.ocean180, label: 'MEDIUM' }, low: { bg: ns.pine, color: ns.white, label: 'LOW' } };
+  const s = map[priority] || map.low;
+  return (
+    <span style={{ padding: '0.25rem 0.75rem', borderRadius: '12px', fontSize: '0.75rem', fontWeight: 500, textTransform: 'uppercase', display: 'inline-block', whiteSpace: 'nowrap', background: s.bg, color: s.color }}>
+      {s.label}
+    </span>
+  );
+};
+
+// ── Main Component ──
+const FinancialCloseDashboard = () => {
+  const [selectedPeriod, setSelectedPeriod] = useState('December 2025 Close');
+  const [selectedView, setSelectedView]     = useState('workflow');
+  const [tasks, setTasks]                   = useState(initialTasks);
+  const [expandedStages, setExpandedStages] = useState({ stage1: true, stage2: true, stage3: false, stage4: false, stage5: false, stage6: false });
+
+  const toggleTaskStatus = (taskId) => {
+    const cycle = { 'not-started': 'in-progress', 'in-progress': 'complete', 'complete': 'not-started', 'blocked': 'in-progress' };
+    setTasks(tasks.map(t => t.id === taskId ? { ...t, status: cycle[t.status] } : t));
+  };
+
+  const toggleStage = (id) => setExpandedStages(prev => ({ ...prev, ['stage' + id]: !prev['stage' + id] }));
+
+  const stats = useMemo(() => {
+    const total         = tasks.length;
+    const completed     = tasks.filter(t => t.status === 'complete').length;
+    const inProgress    = tasks.filter(t => t.status === 'in-progress').length;
+    const blocked       = tasks.filter(t => t.status === 'blocked').length;
+    const dueToday      = tasks.filter(t => t.daysUntil === 0).length;
+    const overdue       = tasks.filter(t => t.daysUntil < 0 && t.status !== 'complete').length;
+    const completionPct = Math.round((completed / total) * 100);
+    return { total, completed, inProgress, blocked, dueToday, overdue, completionPct };
+  }, [tasks]);
+
+  const closeStatus = (() => {
+    if (stats.blocked > 0 || stats.overdue > 0) return { label: 'AT RISK',     bg: ns.rose     };
+    if (stats.completionPct === 100)             return { label: 'COMPLETE',    bg: ns.pine     };
+    if (stats.completionPct >= 50)               return { label: 'IN PROGRESS', bg: ns.yellow   };
+    return                                              { label: 'NOT STARTED', bg: ns.ocean120 };
+  })();
+
+  const daysRemaining = 13;
+  const getDueDateColor = (d) => d < 0 ? ns.rose : d === 0 ? ns.yellow : ns.ocean150;
+
+  const card = { background: ns.white, borderRadius: '8px', padding: '1.5rem', boxShadow: '0 1px 3px rgba(19,33,44,0.1)', border: '1px solid ' + ns.ocean30 };
+
+  return (
+    <div style={{ fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif', background: ns.neutral, color: ns.ocean180, padding: '2rem', minHeight: '100vh' }}>
+      <div style={{ maxWidth: '1400px', margin: '0 auto' }}>
+
+        {/* Header */}
+        <div style={{ ...card, marginBottom: '1.5rem' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
+            <div>
+              <h1 style={{ fontSize: '1.875rem', fontWeight: 600, color: ns.ocean180, margin: '0 0 0.5rem' }}>Financial Close Tracking</h1>
+              <select value={selectedPeriod} onChange={e => setSelectedPeriod(e.target.value)}
+                style={{ padding: '0.5rem 1rem', border: '1px solid ' + ns.ocean30, borderRadius: '6px', fontSize: '1rem', fontFamily: 'inherit', background: ns.white, color: ns.ocean180, cursor: 'pointer' }}>
+                <option>December 2025 Close</option>
+                <option>November 2025 Close</option>
+                <option>October 2025 Close</option>
+              </select>
+              <div style={{ marginTop: '0.5rem', fontSize: '0.875rem', color: ns.ocean150 }}>
+                Demo Environment · {transactionData.totalTransactions} transactions · Last refresh: Dec 18, 2025 4:45 PM
+              </div>
+            </div>
+            <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+              <span style={{ padding: '0.5rem 1.5rem', borderRadius: '12px', fontSize: '1rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.025em', background: closeStatus.bg, color: ns.white }}>
+                {closeStatus.label}
+              </span>
+              <div style={{ background: daysRemaining < 3 ? ns.rose : daysRemaining <= 5 ? ns.yellow : ns.pine, color: ns.white, borderRadius: '8px', padding: '1rem', textAlign: 'center', minWidth: '110px' }}>
+                <div style={{ fontSize: '0.875rem', fontWeight: 500, marginBottom: '0.25rem' }}>Days Remaining</div>
+                <div style={{ fontSize: '1.5rem', fontWeight: 600 }}>{daysRemaining}</div>
+              </div>
+              <div style={{ width: 80, height: 80, borderRadius: '50%', background: 'conic-gradient(' + ns.ocean120 + ' ' + stats.completionPct + '%, ' + ns.ocean10 + ' 0)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <div style={{ width: 64, height: 64, borderRadius: '50%', background: ns.white, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.1rem', fontWeight: 600, color: ns.ocean180 }}>
+                  {stats.completionPct}%
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Alert Badges */}
+        {(stats.overdue > 0 || stats.dueToday > 0 || stats.blocked > 0) && (
+          <div style={{ ...card, marginBottom: '1.5rem', display: 'flex', gap: '1rem', flexWrap: 'wrap', alignItems: 'center' }}>
+            {stats.overdue > 0 && (
+              <div style={{ background: ns.rose, color: ns.white, padding: '0.5rem 1rem', borderRadius: '6px', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.875rem', fontWeight: 500 }}>
+                <AlertCircle size={16} /> {stats.overdue} Overdue Tasks
+              </div>
+            )}
+            {stats.dueToday > 0 && (
+              <div style={{ background: ns.yellow, color: ns.ocean180, padding: '0.5rem 1rem', borderRadius: '6px', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.875rem', fontWeight: 500 }}>
+                <Clock size={16} /> {stats.dueToday} Tasks Due Today
+              </div>
+            )}
+            {stats.blocked > 0 && (
+              <div style={{ background: ns.rose, color: ns.white, padding: '0.5rem 1rem', borderRadius: '6px', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.875rem', fontWeight: 500 }}>
+                <AlertTriangle size={16} /> {stats.blocked} Blocked Tasks
+              </div>
+            )}
+            <div style={{ background: ns.pine, color: ns.white, padding: '0.5rem 1rem', borderRadius: '6px', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.875rem', fontWeight: 500 }}>
+              <FileText size={16} /> {transactionData.invoices} Invoices to Review
+            </div>
+            <div style={{ background: ns.ocean60, color: ns.white, padding: '0.5rem 1rem', borderRadius: '6px', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.875rem', fontWeight: 500 }}>
+              <FileText size={16} /> {transactionData.journals} Journal Entries
+            </div>
+          </div>
+        )}
+
+        {/* Summary Stats */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(180px,1fr))', gap: '1rem', marginBottom: '1.5rem' }}>
+          {[
+            { label: 'Total Tasks',  value: stats.total,      bg: ns.ocean120 },
+            { label: 'Completed',    value: stats.completed,   bg: ns.pine     },
+            { label: 'In Progress',  value: stats.inProgress,  bg: ns.yellow, color: ns.ocean180 },
+            { label: 'Blocked',      value: stats.blocked,     bg: ns.rose     },
+            { label: 'Due Today',    value: stats.dueToday,    bg: ns.ocean60  },
+          ].map((m, i) => (
+            <div key={i} style={{ background: m.bg, color: m.color || ns.white, borderRadius: '8px', padding: '1.5rem', textAlign: 'center', boxShadow: '0 1px 3px rgba(19,33,44,0.1)' }}>
+              <div style={{ fontSize: '0.875rem', fontWeight: 500, marginBottom: '0.5rem' }}>{m.label}</div>
+              <div style={{ fontSize: '2rem', fontWeight: 600 }}>{m.value}</div>
+            </div>
+          ))}
+        </div>
+
+        {/* View Selector */}
+        <div className="no-print" style={{ ...card, marginBottom: '1.5rem', display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+          {[{ id: 'workflow', label: 'Workflow View' }, { id: 'owner', label: 'By Owner' }, { id: 'invoices', label: 'Invoice Review' }].map(v => (
+            <button key={v.id} onClick={() => setSelectedView(v.id)} style={{
+              padding: '0.75rem 1.5rem', borderRadius: '6px', fontSize: '0.875rem', fontWeight: 500,
+              cursor: 'pointer', fontFamily: 'inherit',
+              background: selectedView === v.id ? ns.ocean120 : ns.white,
+              color: selectedView === v.id ? ns.white : ns.ocean150,
+              border: '1px solid ' + (selectedView === v.id ? ns.ocean120 : ns.ocean30)
+            }}>{v.label}</button>
+          ))}
+        </div>
+
+        {/* ── WORKFLOW VIEW ── */}
+        {selectedView === 'workflow' && (
+          <div>
+            {stages.map(stage => {
+              const stageTasks  = tasks.filter(t => t.stage === stage.id);
+              const isExpanded  = expandedStages['stage' + stage.id];
+              const completed   = stageTasks.filter(t => t.status === 'complete').length;
+              const total       = stageTasks.length;
+              const pct         = Math.round((completed / total) * 100);
+
+              return (
+                <div key={stage.id} style={{ ...card, padding: 0, marginBottom: '1rem' }}>
+                  <div onClick={() => toggleStage(stage.id)} style={{ padding: '1.5rem', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: isExpanded ? '1px solid ' + ns.ocean30 : 'none' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flex: 1 }}>
+                      {isExpanded ? <ChevronDown size={20} color={ns.ocean120} /> : <ChevronRight size={20} color={ns.ocean120} />}
+                      <div>
+                        <h3 style={{ fontSize: '1.125rem', fontWeight: 600, color: ns.ocean180, margin: 0 }}>Stage {stage.id}: {stage.name}</h3>
+                        <div style={{ fontSize: '0.875rem', color: ns.ocean150, marginTop: '0.25rem' }}>{stage.days}</div>
+                      </div>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                      <div style={{ fontSize: '0.875rem', color: ns.ocean150 }}>{completed} of {total} complete</div>
+                      <div style={{ width: 100, height: 8, background: ns.ocean10, borderRadius: 4, overflow: 'hidden' }}>
+                        <div style={{ width: pct + '%', height: '100%', background: pct === 100 ? ns.pine : ns.ocean120, transition: 'width 0.3s' }} />
+                      </div>
+                    </div>
+                  </div>
+
+                  {isExpanded && (
+                    <div style={{ padding: '1.5rem', overflowX: 'auto' }}>
+                      <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 900 }}>
+                        <thead>
+                          <tr style={{ background: ns.ocean10 }}>
+                            {['', 'Task', 'Owner', 'Due Date', 'Status', 'Priority'].map((h, i) => (
+                              <th key={i} style={{ padding: '0.875rem', textAlign: 'left', fontWeight: 600, color: ns.ocean150, borderBottom: '1px solid ' + ns.ocean30, fontSize: '0.875rem', width: i === 0 ? 40 : 'auto' }}>{h}</th>
+                            ))}
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {stageTasks.map((task, idx) => (
+                            <tr key={task.id} style={{ background: idx % 2 === 0 ? ns.white : ns.ocean10, borderBottom: '1px solid ' + ns.ocean30 }}>
+                              <td style={{ padding: '0.875rem' }}>
+                                <div onClick={() => toggleTaskStatus(task.id)} style={{ cursor: 'pointer' }} title="Click to update status">
+                                  {task.status === 'complete'
+                                    ? <CheckSquare size={20} color={ns.pine} />
+                                    : <Square size={20} color={ns.ocean120} />}
+                                </div>
+                              </td>
+                              <td style={{ padding: '0.875rem', color: ns.ocean150, fontSize: '0.875rem' }}>
+                                <div style={{ fontWeight: 500, color: ns.ocean180 }}>{task.name}</div>
+                                <div style={{ fontSize: '0.75rem', color: ns.ocean150, marginTop: '0.2rem' }}>{task.description}</div>
+                              </td>
+                              <td style={{ padding: '0.875rem', fontSize: '0.875rem' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: ns.ocean150 }}>
+                                  <User size={15} /> {task.owner}
+                                </div>
+                              </td>
+                              <td style={{ padding: '0.875rem', fontSize: '0.875rem', color: getDueDateColor(task.daysUntil), fontWeight: task.daysUntil <= 0 ? 600 : 400 }}>
+                                {task.dueDate}
+                                {task.daysUntil < 0 && task.status !== 'complete' && (
+                                  <span style={{ marginLeft: '0.4rem', color: ns.rose, fontWeight: 600 }}>({Math.abs(task.daysUntil)}d overdue)</span>
+                                )}
+                                {task.daysUntil === 0 && ' (Today)'}
+                              </td>
+                              <td style={{ padding: '0.875rem' }}><StatusBadge status={task.status} /></td>
+                              <td style={{ padding: '0.875rem' }}><PriorityBadge priority={task.priority} /></td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        {/* ── BY OWNER VIEW ── */}
+        {selectedView === 'owner' && (
+          <div style={{ display: 'grid', gap: '1.5rem', gridTemplateColumns: 'repeat(auto-fit,minmax(380px,1fr))' }}>
+            {employees.slice(0, 6).map(emp => {
+              const ownerTasks  = tasks.filter(t => t.owner === emp.name);
+              const completed   = ownerTasks.filter(t => t.status === 'complete').length;
+              const total       = ownerTasks.length;
+              const pct         = total > 0 ? Math.round((completed / total) * 100) : 0;
+              if (total === 0) return null;
+              return (
+                <div key={emp.id} style={card}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                    <div style={{ fontSize: '1.125rem', fontWeight: 600, color: ns.ocean120, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                      <User size={18} /> {emp.name}
+                    </div>
+                    <div style={{ fontSize: '1.25rem', fontWeight: 600, color: pct === 100 ? ns.pine : ns.ocean120 }}>{pct}%</div>
+                  </div>
+                  <div style={{ marginBottom: '1rem' }}>
+                    <div style={{ fontSize: '0.875rem', color: ns.ocean150, marginBottom: '0.5rem' }}>{completed} of {total} tasks complete</div>
+                    <div style={{ width: '100%', height: 8, background: ns.ocean10, borderRadius: 4, overflow: 'hidden' }}>
+                      <div style={{ width: pct + '%', height: '100%', background: pct === 100 ? ns.pine : ns.ocean120 }} />
+                    </div>
+                  </div>
+                  <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                    <tbody>
+                      {ownerTasks.map((task, i) => (
+                        <tr key={task.id} style={{ background: i%2===0 ? ns.white : ns.ocean10, borderBottom: '1px solid ' + ns.ocean30 }}>
+                          <td style={{ padding: '0.75rem', fontSize: '0.875rem', color: ns.ocean150 }}>{task.name}</td>
+                          <td style={{ padding: '0.75rem', textAlign: 'right' }}><StatusBadge status={task.status} small /></td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        {/* ── INVOICE REVIEW VIEW ── */}
+        {selectedView === 'invoices' && (
+          <div style={card}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+              <h3 style={{ fontSize: '1.125rem', fontWeight: 600, color: ns.ocean180, margin: 0 }}>
+                December 2025 Invoices for Review ({invoiceData.length} of {transactionData.invoices} total)
+              </h3>
+              <span style={{ background: ns.ocean120, color: ns.white, padding: '0.5rem 1rem', borderRadius: '6px', fontSize: '0.875rem', fontWeight: 500 }}>
+                Demo Environment
+              </span>
+            </div>
+            <div style={{ overflowX: 'auto' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 700 }}>
+                <thead>
+                  <tr style={{ background: ns.ocean10 }}>
+                    {['Invoice #', 'Date', 'Customer', 'Amount', 'Status'].map(h => (
+                      <th key={h} style={{ padding: '1rem', textAlign: h === 'Amount' ? 'right' : 'left', fontWeight: 600, color: ns.ocean150, borderBottom: '1px solid ' + ns.ocean30, fontSize: '0.875rem' }}>{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {invoiceData.map((inv, i) => (
+                    <tr key={inv.id} style={{ background: i%2===0 ? ns.white : ns.ocean10, borderBottom: '1px solid ' + ns.ocean30 }}>
+                      <td style={{ padding: '1rem', fontSize: '0.875rem', color: ns.ocean120, fontWeight: 600 }}>{inv.tranid}</td>
+                      <td style={{ padding: '1rem', color: ns.ocean150, fontSize: '0.875rem' }}>{inv.date}</td>
+                      <td style={{ padding: '1rem', fontSize: '0.875rem', color: ns.ocean150 }}>{inv.customer}</td>
+                      <td style={{ padding: '1rem', textAlign: 'right', color: ns.ocean180, fontSize: '0.875rem', fontWeight: 600 }}>{fmtCurrency(inv.amount)}</td>
+                      <td style={{ padding: '1rem' }}>
+                        <span style={{ padding: '0.25rem 0.75rem', borderRadius: '12px', fontSize: '0.75rem', fontWeight: 500, textTransform: 'uppercase', display: 'inline-block', whiteSpace: 'nowrap', background: inv.status === 'Billed' ? ns.pine : ns.yellow, color: inv.status === 'Billed' ? ns.white : ns.ocean180 }}>
+                          {inv.status}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+                <tfoot>
+                  <tr style={{ background: ns.ocean10, fontWeight: 600 }}>
+                    <td colSpan={3} style={{ padding: '1rem', fontSize: '0.875rem', color: ns.ocean180 }}>Total ({invoiceData.length} invoices shown)</td>
+                    <td style={{ padding: '1rem', textAlign: 'right', fontSize: '0.875rem', color: ns.ocean180, fontWeight: 600 }}>{fmtCurrency(invoiceData.reduce((s, inv) => s + inv.amount, 0))}</td>
+                    <td />
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+          </div>
+        )}
+
+      </div>
+    </div>
+  );
+};
+
+ReactDOM.render(<FinancialCloseDashboard />, document.getElementById('root'));
+</script>
+</body>
+</html>

@@ -1,0 +1,898 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AP & Cash Flow Command Center</title>
+<script src="https://cdn.jsdelivr.net/npm/react@18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/react-dom@18.2.0/umd/react-dom.production.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@babel/standalone@7.23.2/babel.min.js"></script>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif; background: #F1EFED; color: #13212C; }
+@media print { .no-print, button, select { display: none !important; } }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const { useState, useMemo, useEffect, useRef } = React;
+
+const ns = {
+  ocean120: '#36677D', ocean180: '#13212C', ocean150: '#264759',
+  ocean60: '#94BFCE', ocean30: '#E7F2F5', ocean10: '#F5FAFC',
+  pine: '#86B596', rose: '#FF8675', yellow: '#E2C06B',
+  neutral: '#F1EFED', white: '#FFFFFF'
+};
+
+// ── Inline SVG icon stubs (replaces Lucide) ──
+const Icon = ({ d, size = 16, color = 'currentColor', style }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none"
+    stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+    style={{ flexShrink: 0, ...style }}>
+    <path d={d} />
+  </svg>
+);
+const TrendingUp    = (p) => <Icon {...p} d="M22 7l-8.5 8.5-5-5L2 17M16 7h6v6" />;
+const TrendingDown  = (p) => <Icon {...p} d="M22 17l-8.5-8.5-5 5L2 7M16 17h6v-6" />;
+const AlertCircle   = (p) => <Icon {...p} d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zM12 8v4M12 16h.01" />;
+const AlertTriangle = (p) => <Icon {...p} d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0zM12 9v4M12 17h.01" />;
+const CheckCircle   = (p) => <Icon {...p} d="M22 11.08V12a10 10 0 1 1-5.93-9.14M22 4 12 14.01l-3-3" />;
+const Clock         = (p) => <Icon {...p} d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zM12 6v6l4 2" />;
+const DollarSign    = (p) => <Icon {...p} d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />;
+const Users         = (p) => <Icon {...p} d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" />;
+const FileText      = (p) => <Icon {...p} d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8zM14 2v6h6M16 13H8M16 17H8M10 9H8" />;
+const CreditCard    = (p) => <Icon {...p} d="M21 4H3a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h18a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2zM1 10h22" />;
+const Shield        = (p) => <Icon {...p} d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />;
+const Target        = (p) => <Icon {...p} d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zM12 6a6 6 0 1 0 0 12 6 6 0 0 0 0-12zM12 10a2 2 0 1 0 0 4 2 2 0 0 0 0-4z" />;
+const Zap           = (p) => <Icon {...p} d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />;
+const Database      = (p) => <Icon {...p} d="M12 2C6.5 2 2 4 2 6.5v11C2 20 6.5 22 12 22s10-2 10-4.5v-11C22 4 17.5 2 12 2zM2 6.5C2 9 6.5 11 12 11s10-2 10-4.5M2 12c0 2.5 4.5 4.5 10 4.5s10-2 10-4.5" />;
+const Award         = (p) => <Icon {...p} d="M12 15a6 6 0 1 0 0-12 6 6 0 0 0 0 12zM8.21 13.89L7 23l5-3 5 3-1.21-9.12" />;
+
+// ── Helpers ──
+const fmt = (v) => {
+  if (!v && v !== 0) return '$0';
+  if (v >= 1000000) return '$' + (v/1000000).toFixed(1) + 'M';
+  if (v >= 1000) return '$' + (v/1000).toFixed(0) + 'K';
+  return '$' + Number(v).toLocaleString();
+};
+const fmtDate = (s) => {
+  if (!s) return '—';
+  try { return new Date(s).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }); }
+  catch(e) { return s; }
+};
+
+// ── Data (anonymized) ──
+const liveData = {
+  cashPosition: 23387648.63,
+  cashAccounts: [
+    { name: "Checking - US West",  account: "1010", balance: 11712896.93, currency: 'USD' },
+    { name: "Checking - US East",  account: "1011", balance: 913347.19,   currency: 'USD' },
+    { name: "Checking - EU",       account: "1017", balance: 6962794.88,  currency: 'EUR' },
+    { name: "Checking - UK",       account: "1018", balance: 3798609.63,  currency: 'GBP' },
+  ],
+  topVendors: [
+    { name: "Apex Consulting",      ytdSpend: 2981384,   invoiceCount: 12, avgInvoice: 248448, category: "IT Services",          onTimePercent: 100, avgDaysToPay: 28, terms: 30, healthScore: 'A', discountCaptureRate: 100, relationshipYears: 5 },
+    { name: "Summit Advisory",      ytdSpend: 2820563,   invoiceCount: 10, avgInvoice: 282056, category: "Professional Services", onTimePercent: 98,  avgDaysToPay: 31, terms: 30, healthScore: 'A', discountCaptureRate: 95,  relationshipYears: 7 },
+    { name: "Rivera & Partners",    ytdSpend: 2391654,   invoiceCount: 10, avgInvoice: 239165, category: "Professional Services", onTimePercent: 95,  avgDaysToPay: 35, terms: 30, healthScore: 'B', discountCaptureRate: 88,  relationshipYears: 3 },
+    { name: "Meridian Technology",  ytdSpend: 1098505,   invoiceCount: 12, avgInvoice: 91542,  category: "IT Hardware",           onTimePercent: 92,  avgDaysToPay: 38, terms: 30, healthScore: 'B', discountCaptureRate: 75,  relationshipYears: 8 },
+    { name: "CoreTech Solutions",   ytdSpend: 855948,    invoiceCount: 10, avgInvoice: 85594,  category: "IT Services",           onTimePercent: 100, avgDaysToPay: 29, terms: 30, healthScore: 'A', discountCaptureRate: 100, relationshipYears: 4 },
+    { name: "Bellview LLC",         ytdSpend: 799035,    invoiceCount: 10, avgInvoice: 79903,  category: "Consulting",            onTimePercent: 89,  avgDaysToPay: 42, terms: 30, healthScore: 'B', discountCaptureRate: 60,  relationshipYears: 2 },
+    { name: "Harmon Co",            ytdSpend: 678635,    invoiceCount: 10, avgInvoice: 67863,  category: "Services",              onTimePercent: 87,  avgDaysToPay: 45, terms: 30, healthScore: 'C', discountCaptureRate: 45,  relationshipYears: 1 },
+  ],
+  ytdExpenses: [
+    { account: "3rd Party Contracting", number: "5210", amount: 5314692, type: "COGS",    budget: 5000000, variance: 314692,   variancePct: 6.3  },
+    { account: "Cost of Sales",          number: "5110", amount: 2290554, type: "COGS",    budget: 2500000, variance: -209446,  variancePct: -8.4 },
+    { account: "Salaries & Wages",       number: "6210", amount: 1196265, type: "Expense", budget: 1200000, variance: -3734,    variancePct: -0.3 },
+    { account: "Purchases",              number: "5310", amount: 837685,  type: "COGS",    budget: 800000,  variance: 37685,    variancePct: 4.7  },
+    { account: "Misc Expense",           number: "6360", amount: 633537,  type: "Expense", budget: 500000,  variance: 133537,   variancePct: 26.7 },
+    { account: "Commission Expense",     number: "6070", amount: 427770,  type: "Expense", budget: 450000,  variance: -22229,   variancePct: -4.9 },
+    { account: "Rent Expense",           number: "6610", amount: 193026,  type: "Expense", budget: 200000,  variance: -6973,    variancePct: -3.5 },
+    { account: "Professional Fees",      number: "6470", amount: 167241,  type: "Expense", budget: 150000,  variance: 17241,    variancePct: 11.5 },
+  ],
+  monthlyTrends: [
+    { month: 'Jan', revenue: 2450000, expenses: 1850000, apBalance: 1650000, cashBalance: 18500000, paymentVolume: 245000 },
+    { month: 'Feb', revenue: 2680000, expenses: 1920000, apBalance: 1720000, cashBalance: 19200000, paymentVolume: 268000 },
+    { month: 'Mar', revenue: 2820000, expenses: 2100000, apBalance: 1890000, cashBalance: 20100000, paymentVolume: 312000 },
+    { month: 'Apr', revenue: 2950000, expenses: 2150000, apBalance: 1950000, cashBalance: 20800000, paymentVolume: 298000 },
+    { month: 'May', revenue: 3100000, expenses: 2280000, apBalance: 2050000, cashBalance: 21600000, paymentVolume: 325000 },
+    { month: 'Jun', revenue: 3250000, expenses: 2350000, apBalance: 2180000, cashBalance: 22400000, paymentVolume: 342000 },
+    { month: 'Jul', revenue: 3180000, expenses: 2420000, apBalance: 2240000, cashBalance: 22100000, paymentVolume: 356000 },
+    { month: 'Aug', revenue: 3350000, expenses: 2480000, apBalance: 2150000, cashBalance: 22900000, paymentVolume: 368000 },
+    { month: 'Sep', revenue: 3420000, expenses: 2520000, apBalance: 2080000, cashBalance: 23200000, paymentVolume: 375000 },
+    { month: 'Oct', revenue: 3580000, expenses: 2650000, apBalance: 2015000, cashBalance: 23387649, paymentVolume: 392000 },
+  ],
+};
+
+const openInvoices = [
+  { id: 1,  vendor: 'Apex Consulting',     invoiceNum: 'CC-2025-112',  amount: 248450, dueDate: '11/30/2025', daysUntilDue: 6,   status: 'Approved',          priority: 'Normal',   category: 'IT Services',           hasDiscount: true,  discountAmt: 4969, discountDate: '11/25/2025', approver: 'S. Chen',   memo: 'Cloud infrastructure Q4' },
+  { id: 2,  vendor: 'Summit Advisory',     invoiceNum: 'GC-8847',      amount: 282060, dueDate: '12/01/2025', daysUntilDue: 7,   status: 'Approved',          priority: 'Normal',   category: 'Professional Services', hasDiscount: true,  discountAmt: 2821, discountDate: '11/27/2025', approver: 'D. Liu',    memo: 'Strategic consulting retainer' },
+  { id: 3,  vendor: 'Rivera & Partners',   invoiceNum: 'RVP-2025-Q4',  amount: 239165, dueDate: '12/02/2025', daysUntilDue: 8,   status: 'Approved',          priority: 'Normal',   category: 'Professional Services', hasDiscount: false, discountAmt: 0,    discountDate: null,          approver: 'S. Chen',   memo: 'Management consulting' },
+  { id: 4,  vendor: 'Meridian Technology', invoiceNum: 'HT-Q4-2025',   amount: 91542,  dueDate: '11/28/2025', daysUntilDue: 4,   status: 'Approved',          priority: 'High',     category: 'IT Hardware',           hasDiscount: true,  discountAmt: 1831, discountDate: '11/26/2025', approver: 'M. Torres', memo: 'Server hardware upgrades' },
+  { id: 5,  vendor: 'Meridian Technology', invoiceNum: 'HT-OCT-445',   amount: 91542,  dueDate: '11/25/2025', daysUntilDue: 1,   status: 'Approved',          priority: 'Critical', category: 'IT Hardware',           hasDiscount: false, discountAmt: 0,    discountDate: null,          approver: 'M. Torres', memo: 'Network equipment' },
+  { id: 6,  vendor: 'Meridian Technology', invoiceNum: 'HT-SEP-889',   amount: 91542,  dueDate: '10/15/2025', daysUntilDue: -40, status: 'Overdue',           priority: 'Critical', category: 'IT Hardware',           hasDiscount: false, discountAmt: 0,    discountDate: null,          approver: 'M. Torres', memo: 'URGENT: Payment overdue' },
+  { id: 7,  vendor: 'CoreTech Solutions',  invoiceNum: 'CTS-10234',    amount: 85595,  dueDate: '11/29/2025', daysUntilDue: 5,   status: 'Approved',          priority: 'Normal',   category: 'IT Services',           hasDiscount: true,  discountAmt: 1284, discountDate: '11/24/2025', approver: 'D. Liu',    memo: 'Managed IT services' },
+  { id: 8,  vendor: 'Bellview LLC',        invoiceNum: 'BL-2025-445',  amount: 79904,  dueDate: '12/03/2025', daysUntilDue: 9,   status: 'Approved',          priority: 'Normal',   category: 'Consulting',            hasDiscount: true,  discountAmt: 799,  discountDate: '11/29/2025', approver: 'S. Chen',   memo: 'Business process consulting' },
+  { id: 9,  vendor: 'Bellview LLC',        invoiceNum: 'BL-2025-556',  amount: 79903,  dueDate: '12/05/2025', daysUntilDue: 11,  status: 'Approved',          priority: 'Normal',   category: 'Consulting',            hasDiscount: false, discountAmt: 0,    discountDate: null,          approver: 'S. Chen',   memo: 'Change management' },
+  { id: 10, vendor: 'Harmon Co',           invoiceNum: 'HC-NOV-2025',  amount: 67864,  dueDate: '12/04/2025', daysUntilDue: 10,  status: 'Approved',          priority: 'Normal',   category: 'Services',              hasDiscount: false, discountAmt: 0,    discountDate: null,          approver: 'M. Torres', memo: 'Facilities management' },
+  { id: 11, vendor: 'Harmon Co',           invoiceNum: 'HC-OCT-2025',  amount: 67863,  dueDate: '12/06/2025', daysUntilDue: 12,  status: 'Pending Approval',  priority: 'Normal',   category: 'Services',              hasDiscount: false, discountAmt: 0,    discountDate: null,          approver: null,        memo: 'Monthly service contract' },
+  { id: 12, vendor: 'Apex Consulting',     invoiceNum: 'CC-2025-113',  amount: 248450, dueDate: '12/15/2025', daysUntilDue: 21,  status: 'Pending Approval',  priority: 'Normal',   category: 'IT Services',           hasDiscount: false, discountAmt: 0,    discountDate: null,          approver: null,        memo: 'December cloud services' },
+];
+
+const paymentBatches = [
+  { id: 'BATCH-2025-11-28', date: '11/28/2025', method: 'ACH',   invoices: 24, amount: 485320, status: 'Draft',            approver: null,                 vendors: ['Apex Consulting', 'Summit Advisory', 'Meridian Technology'] },
+  { id: 'BATCH-2025-11-25', date: '11/25/2025', method: 'ACH',   invoices: 18, amount: 342150, status: 'Pending Approval', approver: 'S. Chen (Controller)', vendors: ['CoreTech Solutions', 'Bellview LLC'] },
+  { id: 'BATCH-2025-11-22', date: '11/22/2025', method: 'ACH',   invoices: 31, amount: 654890, status: 'Approved',         approver: 'D. Liu (CFO)',         vendors: ['Multiple vendors'] },
+  { id: 'BATCH-2025-11-20', date: '11/20/2025', method: 'Check', invoices: 5,  amount: 125000, status: 'Transmitted',      approver: 'S. Chen',              vendors: ['Regional vendors'] },
+  { id: 'BATCH-2025-11-18', date: '11/18/2025', method: 'ACH',   invoices: 27, amount: 425670, status: 'Completed',        approver: 'D. Liu',               vendors: ['Multiple vendors'] },
+];
+
+const agingSummary = [
+  { bucket: 'Current (0-30)', amount: 1450000, count: 8,  percent: 72, color: ns.pine },
+  { bucket: '31-60 Days',     amount: 350000,  count: 2,  percent: 17, color: ns.yellow },
+  { bucket: '61-90 Days',     amount: 150000,  count: 1,  percent: 8,  color: '#E89B3C' },
+  { bucket: '90+ Days',       amount: 65000,   count: 1,  percent: 3,  color: ns.rose },
+];
+
+const chartColors = [ns.ocean120, ns.pine, ns.yellow, ns.rose, ns.ocean60, ns.ocean150];
+
+// ── Chart.js wrappers ──
+const ComboChart = ({ data, height = 320 }) => {
+  const ref = useRef(null);
+  const chartRef = useRef(null);
+  useEffect(() => {
+    if (chartRef.current) chartRef.current.destroy();
+    chartRef.current = new Chart(ref.current.getContext('2d'), {
+      data: {
+        labels: data.map(d => d.month),
+        datasets: [
+          { type: 'bar',  label: 'Revenue',      data: data.map(d => d.revenue),     backgroundColor: ns.pine,     yAxisID: 'y'  },
+          { type: 'bar',  label: 'Expenses',     data: data.map(d => d.expenses),    backgroundColor: ns.rose,     yAxisID: 'y'  },
+          { type: 'line', label: 'Cash Balance', data: data.map(d => d.cashBalance), borderColor: ns.ocean120, backgroundColor: 'transparent', tension: 0.3, yAxisID: 'y2', pointRadius: 3 },
+          { type: 'line', label: 'AP Balance',   data: data.map(d => d.apBalance),   borderColor: ns.yellow,   backgroundColor: 'transparent', tension: 0.3, yAxisID: 'y',  pointRadius: 2, borderDash: [4,2] },
+        ]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { position: 'bottom', labels: { font: { size: 10 }, boxWidth: 10 } } },
+        scales: {
+          y:  { position: 'left',  ticks: { callback: v => '$' + (v/1000000).toFixed(1) + 'M', font: { size: 10 } }, grid: { color: '#f0f0f0' } },
+          y2: { position: 'right', ticks: { callback: v => '$' + (v/1000000).toFixed(0)  + 'M', font: { size: 10 } }, grid: { display: false } },
+          x:  { ticks: { font: { size: 10 } }, grid: { display: false } },
+        }
+      }
+    });
+    return () => { if (chartRef.current) chartRef.current.destroy(); };
+  }, []);
+  return <div style={{ height }}><canvas ref={ref} /></div>;
+};
+
+const LineChartComp = ({ data, height = 260 }) => {
+  const ref = useRef(null);
+  const chartRef = useRef(null);
+  useEffect(() => {
+    if (chartRef.current) chartRef.current.destroy();
+    chartRef.current = new Chart(ref.current.getContext('2d'), {
+      type: 'line',
+      data: {
+        labels: data.map(d => d.month),
+        datasets: [{ label: 'Payment Volume', data: data.map(d => d.paymentVolume), borderColor: ns.ocean120, backgroundColor: ns.ocean30, fill: true, tension: 0.3, pointRadius: 3 }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+          y: { ticks: { callback: v => '$' + (v/1000) + 'K', font: { size: 10 } }, grid: { color: '#f0f0f0' } },
+          x: { ticks: { font: { size: 10 } }, grid: { display: false } },
+        }
+      }
+    });
+    return () => { if (chartRef.current) chartRef.current.destroy(); };
+  }, []);
+  return <div style={{ height }}><canvas ref={ref} /></div>;
+};
+
+const HBarChart = ({ data, height = 360 }) => {
+  const ref = useRef(null);
+  const chartRef = useRef(null);
+  useEffect(() => {
+    if (chartRef.current) chartRef.current.destroy();
+    chartRef.current = new Chart(ref.current.getContext('2d'), {
+      type: 'bar',
+      data: {
+        labels: data.map(d => d.account),
+        datasets: [
+          { label: 'Actual Spend', data: data.map(d => d.amount), backgroundColor: ns.ocean120 },
+          { label: 'Budget',       data: data.map(d => d.budget), backgroundColor: ns.ocean60  },
+        ]
+      },
+      options: {
+        indexAxis: 'y',
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { position: 'bottom', labels: { font: { size: 10 }, boxWidth: 10 } } },
+        scales: {
+          x: { ticks: { callback: v => '$' + (v/1000) + 'K', font: { size: 10 } }, grid: { color: '#f0f0f0' } },
+          y: { ticks: { font: { size: 10 } } },
+        }
+      }
+    });
+    return () => { if (chartRef.current) chartRef.current.destroy(); };
+  }, []);
+  return <div style={{ height }}><canvas ref={ref} /></div>;
+};
+
+const DonutChart = ({ vendors, height = 280 }) => {
+  const ref = useRef(null);
+  const chartRef = useRef(null);
+  useEffect(() => {
+    if (chartRef.current) chartRef.current.destroy();
+    chartRef.current = new Chart(ref.current.getContext('2d'), {
+      type: 'doughnut',
+      data: {
+        labels: vendors.map(v => v.name),
+        datasets: [{ data: vendors.map(v => v.ytdSpend), backgroundColor: chartColors, borderWidth: 2, borderColor: '#fff' }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { position: 'bottom', labels: { font: { size: 10 }, boxWidth: 10 } }, tooltip: { callbacks: { label: ctx => ctx.label + ': ' + fmt(ctx.parsed) } } }
+      }
+    });
+    return () => { if (chartRef.current) chartRef.current.destroy(); };
+  }, []);
+  return <div style={{ height }}><canvas ref={ref} /></div>;
+};
+
+const AreaChartComp = ({ data, height = 260 }) => {
+  const ref = useRef(null);
+  const chartRef = useRef(null);
+  useEffect(() => {
+    if (chartRef.current) chartRef.current.destroy();
+    chartRef.current = new Chart(ref.current.getContext('2d'), {
+      type: 'line',
+      data: {
+        labels: data.map(d => d.week),
+        datasets: [
+          { label: 'Projected Balance', data: data.map(d => d.balance),          borderColor: ns.ocean120, backgroundColor: ns.ocean30 + '99', fill: true,  tension: 0.3 },
+          { label: 'Minimum Threshold', data: data.map(d => d.minimumThreshold), borderColor: ns.rose,     backgroundColor: ns.rose     + '22', fill: true,  tension: 0,  borderDash: [4,2] },
+        ]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { position: 'bottom', labels: { font: { size: 10 }, boxWidth: 10 } } },
+        scales: {
+          y: { ticks: { callback: v => '$' + (v/1000000).toFixed(0) + 'M', font: { size: 10 } }, grid: { color: '#f0f0f0' } },
+          x: { ticks: { font: { size: 10 } }, grid: { display: false } },
+        }
+      }
+    });
+    return () => { if (chartRef.current) chartRef.current.destroy(); };
+  }, []);
+  return <div style={{ height }}><canvas ref={ref} /></div>;
+};
+
+// ── Card style ──
+const card = { background: ns.white, borderRadius: '8px', padding: '1.5rem', boxShadow: '0 1px 3px rgba(19,33,44,0.1)', border: '1px solid ' + ns.ocean30 };
+
+// ── MetricCard ──
+const MetricCard = ({ title, value, subtitle, Icon: Ic, color, trend, onClick }) => (
+  <div onClick={onClick} style={{ background: color || ns.ocean120, color: ns.white, borderRadius: '8px', padding: '1.5rem', boxShadow: '0 1px 3px rgba(19,33,44,0.1)', display: 'flex', flexDirection: 'column', gap: '0.5rem', cursor: onClick ? 'pointer' : 'default', transition: 'transform 0.2s' }}
+    onMouseEnter={e => onClick && (e.currentTarget.style.transform = 'translateY(-2px)')}
+    onMouseLeave={e => onClick && (e.currentTarget.style.transform = 'translateY(0)')}>
+    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+      <div style={{ flex: 1 }}>
+        <div style={{ fontSize: '0.875rem', fontWeight: 500, marginBottom: '0.5rem', opacity: 0.9 }}>{title}</div>
+        <div style={{ fontSize: '1.75rem', fontWeight: 600 }}>{value}</div>
+        {subtitle && <div style={{ fontSize: '0.875rem', marginTop: '0.5rem', opacity: 0.85 }}>{subtitle}</div>}
+      </div>
+      {Ic && <Ic size={32} style={{ opacity: 0.8 }} />}
+    </div>
+    {trend && (
+      <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', fontSize: '0.875rem', opacity: 0.9 }}>
+        {trend.direction === 'up' ? <TrendingUp size={16} /> : <TrendingDown size={16} />}
+        <span>{trend.value}</span>
+      </div>
+    )}
+  </div>
+);
+
+// ── StatusBadge ──
+const StatusBadge = ({ status, small }) => {
+  const statusMap = { 'Draft': ns.ocean150, 'Pending Approval': ns.yellow, 'Approved': ns.pine, 'Transmitted': ns.ocean60, 'Completed': ns.ocean120, 'Failed': ns.rose, 'Overdue': ns.rose };
+  const bg = statusMap[status] || ns.ocean150;
+  return (
+    <span style={{ background: bg, color: ns.white, padding: small ? '0.125rem 0.5rem' : '0.25rem 0.75rem', borderRadius: '12px', fontSize: small ? '0.6875rem' : '0.75rem', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.025em', whiteSpace: 'nowrap', display: 'inline-block' }}>
+      {status}
+    </span>
+  );
+};
+
+// ── Main Dashboard ──
+const APCashFlowDashboard = () => {
+  const [selectedPeriod, setSelectedPeriod] = useState('YTD 2025');
+  const [selectedView, setSelectedView] = useState('executive');
+  const [selectedBatch, setSelectedBatch] = useState(null);
+
+  const totalYTDSpend = liveData.topVendors.reduce((s, v) => s + v.ytdSpend, 0);
+  const totalOpenInvoices = openInvoices.reduce((s, i) => s + i.amount, 0);
+  const totalDiscountAvailable = openInvoices.filter(i => i.hasDiscount).reduce((s, i) => s + i.discountAmt, 0);
+  const totalAPBalance = agingSummary.reduce((s, a) => s + a.amount, 0);
+  const cashRunwayDays = 127;
+  const apHealthScore = 92;
+
+  const avgDPO = useMemo(() => {
+    const w = liveData.topVendors.reduce((s, v) => s + v.avgDaysToPay * v.ytdSpend, 0);
+    return (w / totalYTDSpend).toFixed(1);
+  }, []);
+
+  const workingCapitalMetrics = {
+    dpo: parseFloat(avgDPO), dpoTarget: 45,
+    dso: 38.5, dsoTarget: 35,
+    dio: 25.3,
+    ccc: 38.5 + 25.3 - parseFloat(avgDPO), cccTarget: 20,
+    freeCashFlow: 2450000, operatingCashFlow: 3200000
+  };
+
+  const cashFlowForecast = useMemo(() => {
+    const weeks = [];
+    let balance = liveData.cashPosition;
+    for (let i = 0; i < 13; i++) {
+      const inflow  = 450000 + (Math.sin(i * 0.7) * 50000);
+      const outflow = 350000 + (Math.cos(i * 0.9) * 40000);
+      balance += inflow - outflow;
+      weeks.push({ week: 'W' + (i+1), inflow: Math.round(inflow), outflow: Math.round(outflow), balance: Math.round(balance), minimumThreshold: 2000000 });
+    }
+    return weeks;
+  }, []);
+
+  const getInvoiceRecommendation = (inv) => {
+    if (inv.status === 'Overdue' || inv.daysUntilDue < 0) return { label: 'OVERDUE',        color: ns.rose };
+    if (inv.daysUntilDue <= 1)                             return { label: 'DUE NOW',        color: ns.rose };
+    if (inv.hasDiscount && inv.daysUntilDue <= 7)          return { label: 'TAKE DISCOUNT',  color: ns.pine };
+    if (inv.daysUntilDue <= 3)                             return { label: 'DUE SOON',       color: ns.yellow };
+    if (inv.status === 'Pending Approval')                 return { label: 'NEEDS APPROVAL', color: ns.yellow };
+    return { label: 'ON TRACK', color: ns.pine };
+  };
+
+  const kanbanColumns = [
+    { key: 'pending_approval', title: 'Pending Approval', color: ns.yellow  },
+    { key: 'approved',         title: 'Approved',         color: ns.pine    },
+    { key: 'scheduled',        title: 'Scheduled',        color: ns.ocean120 },
+    { key: 'overdue',          title: 'Overdue',          color: ns.rose    },
+  ];
+
+  const getInvoiceColumn = (inv) => {
+    if (inv.status === 'Overdue' || inv.daysUntilDue < 0) return 'overdue';
+    if (inv.status === 'Pending Approval')                return 'pending_approval';
+    if (inv.status === 'Approved' && inv.daysUntilDue <= 7) return 'scheduled';
+    return 'approved';
+  };
+
+  const groupedInvoices = useMemo(() => {
+    const g = { pending_approval: [], approved: [], scheduled: [], overdue: [] };
+    openInvoices.forEach(inv => g[getInvoiceColumn(inv)].push(inv));
+    return g;
+  }, []);
+
+  const tabs = [
+    { id: 'executive',  label: 'Executive Dashboard', Icon: FileText   },
+    { id: 'kanban',     label: 'Invoice Workflow',    Icon: CreditCard  },
+    { id: 'analytics',  label: 'Deep Analytics',      Icon: TrendingUp  },
+    { id: 'vendors',    label: 'Vendor Intelligence', Icon: Users       },
+    { id: 'compliance', label: 'Compliance & Risk',   Icon: Shield      },
+    { id: 'batches',    label: 'Payment Execution',   Icon: Zap         },
+  ];
+
+  const getStatusColor = (s) => ({ 'Draft': ns.ocean150, 'Pending Approval': ns.yellow, 'Approved': ns.pine, 'Transmitted': ns.ocean60, 'Completed': ns.ocean120, 'Failed': ns.rose }[s] || ns.ocean150);
+
+  return (
+    <div style={{ fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif', background: ns.neutral, color: ns.ocean180, padding: '2rem', minHeight: '100vh' }}>
+      <div style={{ maxWidth: '1600px', margin: '0 auto' }}>
+
+        {/* Header */}
+        <div style={{ marginBottom: '2rem' }}>
+          <h1 style={{ color: ns.ocean180, fontSize: '2rem', fontWeight: 600, margin: '0 0 0.5rem' }}>AP & Cash Flow Command Center</h1>
+          <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', flexWrap: 'wrap' }}>
+            <select value={selectedPeriod} onChange={e => setSelectedPeriod(e.target.value)}
+              style={{ padding: '0.5rem', border: '1px solid ' + ns.ocean30, borderRadius: '4px', fontSize: '0.875rem', background: ns.white, color: ns.ocean180 }}>
+              <option>YTD 2025</option><option>Q4 2025</option><option>November 2025</option><option>October 2025</option>
+            </select>
+            <div style={{ fontSize: '0.8rem', color: ns.ocean150 }}>Demo Environment · {new Date().toLocaleString()}</div>
+          </div>
+        </div>
+
+        {/* Navigation */}
+        <div className="no-print" style={{ display: 'flex', gap: '0.5rem', marginBottom: '2rem', borderBottom: '2px solid ' + ns.ocean30, paddingBottom: '0.5rem', flexWrap: 'wrap' }}>
+          {tabs.map(tab => (
+            <button key={tab.id} onClick={() => setSelectedView(tab.id)} style={{
+              padding: '0.75rem 1.25rem', background: selectedView === tab.id ? ns.ocean120 : 'transparent',
+              color: selectedView === tab.id ? ns.white : ns.ocean150, border: 'none', borderRadius: '6px',
+              fontSize: '0.875rem', fontWeight: 500, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem', fontFamily: 'inherit', transition: 'all 0.2s'
+            }}>
+              <tab.Icon size={16} />
+              {tab.label}
+            </button>
+          ))}
+        </div>
+
+        {/* ── EXECUTIVE ── */}
+        {selectedView === 'executive' && (
+          <div style={{ display: 'grid', gap: '1.5rem' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(240px,1fr))', gap: '1rem' }}>
+              <MetricCard title="Cash Position"         value={fmt(liveData.cashPosition)}    subtitle={cashRunwayDays + ' days runway'}       Icon={DollarSign} color={ns.pine}     trend={{ direction: 'up',   value: '+8.5% vs prior month' }} />
+              <MetricCard title="AP Balance"            value={fmt(totalAPBalance)}            subtitle={openInvoices.length + ' open invoices'} Icon={FileText}   color={ns.ocean120} trend={{ direction: 'down', value: '-3.2% vs prior month' }} />
+              <MetricCard title="YTD Vendor Spend"      value={fmt(totalYTDSpend)}             subtitle={liveData.topVendors.length + ' vendors'} Icon={Users}      color={ns.yellow}   trend={{ direction: 'up',   value: '+12.4% YoY' }} />
+              <MetricCard title="Discount Opportunities" value={fmt(totalDiscountAvailable)}  subtitle="Available this week"                   Icon={Zap}        color={ns.rose}     onClick={() => setSelectedView('kanban')} />
+              <MetricCard title="AP Health Score"       value={apHealthScore}                  subtitle="Payment performance"                   Icon={Award}      color={ns.pine} />
+              <MetricCard title="DPO"                   value={avgDPO + ' days'}               subtitle="Target: 45 days"                       Icon={Target}     color={ns.ocean60} />
+            </div>
+
+            {/* Action Required */}
+            <div style={card}>
+              <h3 style={{ color: ns.ocean180, fontSize: '1.125rem', fontWeight: 600, marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <AlertTriangle size={20} /> Action Required
+              </h3>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(260px,1fr))', gap: '1rem' }}>
+                {[
+                  { bg: '#FFF5F5', border: ns.rose,     Icon: AlertCircle, text: '1 Overdue Invoice',         sub: 'Meridian Technology · $91,542 · 40 days past due', tab: 'kanban'  },
+                  { bg: '#FFFBF0', border: ns.yellow,   Icon: Clock,       text: '2 Invoices Need Approval',   sub: 'Total: $316,313 · Review in workflow',             tab: 'kanban'  },
+                  { bg: '#F0FFF4', border: ns.pine,     Icon: Zap,         text: fmt(totalDiscountAvailable) + ' Discounts', sub: '5 invoices · Act by this week',    tab: 'kanban'  },
+                  { bg: '#F5F9FF', border: ns.ocean120, Icon: CreditCard,  text: '2 Payment Batches Ready',    sub: 'Total: $827,470 · Pending approval',               tab: 'batches' },
+                ].map((a, i) => (
+                  <div key={i} onClick={() => setSelectedView(a.tab)} style={{ padding: '1rem', background: a.bg, borderRadius: '6px', border: '2px solid ' + a.border, cursor: 'pointer' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.4rem' }}>
+                      <a.Icon size={20} color={a.border} />
+                      <strong style={{ color: ns.ocean180 }}>{a.text}</strong>
+                    </div>
+                    <div style={{ fontSize: '0.875rem', color: ns.ocean150 }}>{a.sub}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Trends */}
+            <div style={card}>
+              <h3 style={{ color: ns.ocean180, fontSize: '1.125rem', fontWeight: 600, marginBottom: '1rem' }}>YTD 2025 Financial Trends</h3>
+              <ComboChart data={liveData.monthlyTrends} height={320} />
+            </div>
+
+            {/* Cash Flow Forecast */}
+            <div style={card}>
+              <h3 style={{ color: ns.ocean180, fontSize: '1.125rem', fontWeight: 600, marginBottom: '1rem' }}>13-Week Cash Flow Forecast</h3>
+              <AreaChartComp data={cashFlowForecast} height={260} />
+              <div style={{ marginTop: '1rem', padding: '1rem', background: ns.ocean10, borderRadius: '6px', fontSize: '0.875rem', color: ns.ocean150 }}>
+                <strong>Key Insights:</strong> Cash position remains healthy throughout forecast period. Weeks 8-13 show tighter margins. Recommend scheduling large payments in weeks 1-7 to maintain buffer.
+              </div>
+            </div>
+
+            {/* Aging */}
+            <div style={card}>
+              <h3 style={{ color: ns.ocean180, fontSize: '1.125rem', fontWeight: 600, marginBottom: '1rem' }}>AP Aging Distribution</h3>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(200px,1fr))', gap: '1rem' }}>
+                {agingSummary.map((b, i) => (
+                  <div key={i} onClick={() => setSelectedView('kanban')} style={{ padding: '1.25rem', background: ns.white, borderRadius: '8px', border: '1px solid ' + ns.ocean30, borderLeft: '4px solid ' + b.color, cursor: 'pointer', transition: 'transform 0.2s' }}
+                    onMouseEnter={e => e.currentTarget.style.transform = 'translateY(-2px)'}
+                    onMouseLeave={e => e.currentTarget.style.transform = 'translateY(0)'}>
+                    <div style={{ fontSize: '0.875rem', color: ns.ocean150, fontWeight: 500, marginBottom: '0.4rem' }}>{b.bucket}</div>
+                    <div style={{ fontSize: '1.5rem', fontWeight: 600, color: ns.ocean180, marginBottom: '0.2rem' }}>{fmt(b.amount)}</div>
+                    <div style={{ fontSize: '0.8rem', color: ns.ocean150, marginBottom: '0.5rem' }}>{b.count} invoices · {b.percent}% of total</div>
+                    <div style={{ background: ns.ocean30, height: '6px', borderRadius: '3px' }}>
+                      <div style={{ background: b.color, height: '100%', width: b.percent + '%', borderRadius: '3px' }} />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ── KANBAN ── */}
+        {selectedView === 'kanban' && (
+          <div style={{ display: 'grid', gap: '1.5rem' }}>
+            <div style={card}>
+              <h3 style={{ color: ns.ocean180, fontSize: '1.125rem', fontWeight: 600, marginBottom: '1.5rem' }}>Invoice Payment Workflow</h3>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,minmax(280px,1fr))', gap: '1rem', overflowX: 'auto', paddingBottom: '0.5rem' }}>
+                {kanbanColumns.map(col => (
+                  <div key={col.key} style={{ minWidth: '280px' }}>
+                    <div style={{ background: ns.white, border: '2px solid ' + col.color, borderRadius: '8px', padding: '0.75rem', marginBottom: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                      <span style={{ color: col.color }}>●</span>
+                      <span style={{ color: ns.ocean180, fontWeight: 600, fontSize: '0.875rem', flex: 1 }}>{col.title}</span>
+                      <span style={{ background: col.color, color: col.color === ns.yellow ? ns.ocean180 : ns.white, padding: '0.2rem 0.5rem', borderRadius: '12px', fontSize: '0.75rem', fontWeight: 600 }}>
+                        {groupedInvoices[col.key].length}
+                      </span>
+                    </div>
+                    {groupedInvoices[col.key].map(inv => {
+                      const rec = getInvoiceRecommendation(inv);
+                      return (
+                        <div key={inv.id} style={{ background: ns.white, border: '1px solid ' + ns.ocean30, borderRadius: '8px', padding: '1rem', marginBottom: '0.75rem', boxShadow: '0 1px 3px rgba(19,33,44,0.05)' }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.4rem' }}>
+                            <span style={{ color: ns.ocean180, fontSize: '0.875rem', fontWeight: 600 }}>{inv.invoiceNum}</span>
+                            <span style={{ background: rec.color, color: rec.color === ns.yellow ? ns.ocean180 : ns.white, padding: '0.2rem 0.5rem', borderRadius: '4px', fontSize: '0.6rem', fontWeight: 600, textTransform: 'uppercase' }}>{rec.label}</span>
+                          </div>
+                          <div style={{ fontSize: '0.75rem', color: ns.ocean150, marginBottom: '0.3rem' }}>{inv.vendor}</div>
+                          <div style={{ color: ns.ocean180, fontSize: '1rem', fontWeight: 600, marginBottom: '0.4rem' }}>{fmt(inv.amount)}</div>
+                          {inv.hasDiscount && (
+                            <div style={{ background: '#F0FFF4', border: '1px solid ' + ns.pine, borderRadius: '4px', padding: '0.4rem 0.5rem', marginBottom: '0.4rem', fontSize: '0.75rem' }}>
+                              <span style={{ color: ns.pine, fontWeight: 600 }}>Save {fmt(inv.discountAmt)}</span>
+                              {inv.discountDate && <span style={{ color: ns.ocean150 }}> · Pay by {fmtDate(inv.discountDate)}</span>}
+                            </div>
+                          )}
+                          <div style={{ color: inv.daysUntilDue < 0 ? ns.rose : inv.daysUntilDue <= 3 ? ns.yellow : ns.ocean150, fontSize: '0.75rem', fontWeight: 500 }}>
+                            Due: {fmtDate(inv.dueDate)}{inv.daysUntilDue >= 0 ? ' (' + inv.daysUntilDue + ' days)' : ' (OVERDUE)'}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div style={card}>
+              <h3 style={{ color: ns.ocean180, fontSize: '1.125rem', fontWeight: 600, marginBottom: '1rem' }}>Quick Actions</h3>
+              <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
+                {[
+                  { bg: ns.pine,    label: '✓ Approve All Scheduled (' + groupedInvoices.scheduled.length + ')', color: ns.white       },
+                  { bg: ns.ocean120, label: '⊕ Create Payment Batch',                                            color: ns.white, onClick: () => setSelectedView('batches') },
+                  { bg: ns.yellow,  label: '⚡ Capture All Discounts (' + fmt(totalDiscountAvailable) + ')',     color: ns.ocean180    },
+                ].map((b, i) => (
+                  <button key={i} onClick={b.onClick} style={{ background: b.bg, color: b.color, border: 'none', borderRadius: '6px', padding: '0.75rem 1.5rem', fontSize: '0.875rem', fontWeight: 500, cursor: 'pointer', fontFamily: 'inherit' }}>
+                    {b.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ── ANALYTICS ── */}
+        {selectedView === 'analytics' && (
+          <div style={{ display: 'grid', gap: '1.5rem' }}>
+            <div style={card}>
+              <h3 style={{ color: ns.ocean180, fontSize: '1.125rem', fontWeight: 600, marginBottom: '1rem' }}>YTD 2025 Expense Analysis vs. Budget</h3>
+              <HBarChart data={liveData.ytdExpenses} height={360} />
+              <div style={{ marginTop: '1.5rem' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.875rem' }}>
+                  <thead>
+                    <tr style={{ background: ns.ocean10 }}>
+                      {['Account','Actual','Budget','Variance','%'].map(h => (
+                        <th key={h} style={{ padding: '0.75rem', textAlign: h === 'Account' ? 'left' : 'right', fontWeight: 600, color: ns.ocean150, borderBottom: '1px solid ' + ns.ocean30 }}>{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {liveData.ytdExpenses.map((exp, i) => (
+                      <tr key={i} style={{ background: i%2===0 ? ns.white : ns.ocean10, borderBottom: '1px solid ' + ns.ocean30 }}>
+                        <td style={{ padding: '0.75rem', color: ns.ocean150 }}>{exp.number} {exp.account}</td>
+                        <td style={{ padding: '0.75rem', textAlign: 'right', color: ns.ocean180, fontWeight: 600 }}>{fmt(exp.amount)}</td>
+                        <td style={{ padding: '0.75rem', textAlign: 'right', color: ns.ocean150 }}>{fmt(exp.budget)}</td>
+                        <td style={{ padding: '0.75rem', textAlign: 'right', color: exp.variance > 0 ? ns.rose : ns.pine, fontWeight: 600 }}>{exp.variance > 0 ? '+' : ''}{fmt(Math.abs(exp.variance))}</td>
+                        <td style={{ padding: '0.75rem', textAlign: 'right' }}>
+                          <span style={{ background: Math.abs(exp.variancePct) > 10 ? ns.rose : Math.abs(exp.variancePct) > 5 ? ns.yellow : ns.pine, color: ns.white, padding: '0.125rem 0.5rem', borderRadius: '12px', fontSize: '0.6875rem', fontWeight: 600 }}>
+                            {exp.variancePct > 0 ? '+' : ''}{exp.variancePct.toFixed(1)}%
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <div style={card}>
+              <h3 style={{ color: ns.ocean180, fontSize: '1.125rem', fontWeight: 600, marginBottom: '1rem' }}>Payment Volume Trends</h3>
+              <LineChartComp data={liveData.monthlyTrends} height={260} />
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(180px,1fr))', gap: '1rem', marginTop: '1.5rem' }}>
+                {[
+                  { label: 'Avg Monthly Volume',  value: fmt(liveData.monthlyTrends.reduce((s,m) => s+m.paymentVolume,0)/liveData.monthlyTrends.length) },
+                  { label: 'Payment Growth Rate', value: '+18.2%',  color: ns.pine },
+                  { label: 'Avg Payment Size',    value: fmt(totalYTDSpend / liveData.topVendors.reduce((s,v) => s+v.invoiceCount,0)) },
+                  { label: 'Processing Efficiency', value: '4.2 days', sub: 'invoice to payment', color: ns.pine },
+                ].map((m, i) => (
+                  <div key={i} style={{ padding: '1rem', background: ns.ocean10, borderRadius: '6px', textAlign: 'center' }}>
+                    <div style={{ fontSize: '0.75rem', color: ns.ocean150, marginBottom: '0.25rem' }}>{m.label}</div>
+                    <div style={{ fontSize: '1.5rem', fontWeight: 600, color: m.color || ns.ocean120 }}>{m.value}</div>
+                    {m.sub && <div style={{ fontSize: '0.75rem', color: ns.ocean150 }}>{m.sub}</div>}
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div style={card}>
+              <h3 style={{ color: ns.ocean180, fontSize: '1.125rem', fontWeight: 600, marginBottom: '1rem' }}>Working Capital Analysis</h3>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(180px,1fr))', gap: '1rem', marginBottom: '1.5rem' }}>
+                {[
+                  { label: 'DPO (Days Payable)', value: workingCapitalMetrics.dpo, target: workingCapitalMetrics.dpoTarget, pct: (workingCapitalMetrics.dpo / workingCapitalMetrics.dpoTarget)*100, color: ns.ocean120 },
+                  { label: 'DSO (Days Sales)',   value: workingCapitalMetrics.dso, target: workingCapitalMetrics.dsoTarget, pct: (workingCapitalMetrics.dso/60)*100, color: workingCapitalMetrics.dso > workingCapitalMetrics.dsoTarget ? ns.rose : ns.pine },
+                  { label: 'DIO (Days Inventory)', value: workingCapitalMetrics.dio, target: 45, pct: (workingCapitalMetrics.dio/45)*100, color: ns.yellow },
+                ].map((m, i) => (
+                  <div key={i} style={{ padding: '1rem', background: ns.ocean10, borderRadius: '6px' }}>
+                    <div style={{ fontSize: '0.75rem', color: ns.ocean150, marginBottom: '0.25rem' }}>{m.label}</div>
+                    <div style={{ fontSize: '1.5rem', fontWeight: 600, color: ns.ocean180 }}>{m.value}</div>
+                    <div style={{ fontSize: '0.75rem', color: ns.ocean150 }}>Target: {m.target}</div>
+                    <div style={{ marginTop: '0.5rem', background: ns.white, borderRadius: '4px', height: '8px', overflow: 'hidden' }}>
+                      <div style={{ background: m.color, height: '100%', width: Math.min(m.pct, 100) + '%' }} />
+                    </div>
+                  </div>
+                ))}
+                <div style={{ padding: '1rem', background: workingCapitalMetrics.ccc <= workingCapitalMetrics.cccTarget ? '#F0FFF4' : '#FFF5F5', borderRadius: '6px', border: '2px solid ' + (workingCapitalMetrics.ccc <= workingCapitalMetrics.cccTarget ? ns.pine : ns.rose) }}>
+                  <div style={{ fontSize: '0.75rem', color: ns.ocean150, marginBottom: '0.25rem' }}>Cash Conversion Cycle</div>
+                  <div style={{ fontSize: '1.5rem', fontWeight: 600, color: workingCapitalMetrics.ccc <= workingCapitalMetrics.cccTarget ? ns.pine : ns.rose }}>{workingCapitalMetrics.ccc.toFixed(1)} days</div>
+                  <div style={{ fontSize: '0.75rem', color: ns.ocean150 }}>Target: {workingCapitalMetrics.cccTarget}</div>
+                </div>
+              </div>
+              <div style={{ padding: '1rem', background: ns.ocean10, borderRadius: '6px', marginBottom: '1rem' }}>
+                <div style={{ fontSize: '0.875rem', fontWeight: 600, color: ns.ocean180, marginBottom: '0.4rem' }}>CCC Formula: DSO + DIO − DPO = {workingCapitalMetrics.ccc.toFixed(1)} days</div>
+                <div style={{ fontSize: '0.875rem', color: ns.ocean150 }}>{workingCapitalMetrics.dso} + {workingCapitalMetrics.dio} − {workingCapitalMetrics.dpo} = {workingCapitalMetrics.ccc.toFixed(1)} days</div>
+              </div>
+              <div style={{ padding: '1rem', background: '#FFFBF0', border: '1px solid ' + ns.yellow, borderRadius: '6px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
+                  <Target size={20} color={ns.yellow} />
+                  <strong style={{ color: ns.ocean180 }}>Optimization Opportunity</strong>
+                </div>
+                <div style={{ fontSize: '0.875rem', color: ns.ocean150, lineHeight: 1.5 }}>
+                  Extending DPO by 5 days (to target of 45) would improve CCC to {(workingCapitalMetrics.ccc - 5).toFixed(1)} days,
+                  freeing up approximately <strong>{fmt((totalYTDSpend / 365) * 5)}</strong> in working capital.
+                  Focus on negotiating extended terms with top 5 vendors (62% of spend).
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ── VENDORS ── */}
+        {selectedView === 'vendors' && (
+          <div style={{ display: 'grid', gap: '1.5rem' }}>
+            <div style={card}>
+              <h3 style={{ color: ns.ocean180, fontSize: '1.125rem', fontWeight: 600, marginBottom: '1rem' }}>Vendor Performance Scorecard</h3>
+              <div style={{ overflowX: 'auto' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.875rem' }}>
+                  <thead>
+                    <tr style={{ background: ns.ocean10 }}>
+                      {['Vendor','Category','YTD Spend','Invoices','Avg Invoice','On-Time %','Avg Days','Discount Rate','Years','Health'].map(h => (
+                        <th key={h} style={{ padding: '0.75rem', textAlign: h === 'Vendor' || h === 'Category' ? 'left' : 'center', fontWeight: 600, color: ns.ocean150, borderBottom: '1px solid ' + ns.ocean30, whiteSpace: 'nowrap' }}>{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {liveData.topVendors.map((v, i) => (
+                      <tr key={i} style={{ background: i%2===0 ? ns.white : ns.ocean10, borderBottom: '1px solid ' + ns.ocean30 }}>
+                        <td style={{ padding: '0.75rem', color: ns.ocean120, fontWeight: 500 }}>{v.name}</td>
+                        <td style={{ padding: '0.75rem', color: ns.ocean150, fontSize: '0.8125rem' }}>{v.category}</td>
+                        <td style={{ padding: '0.75rem', textAlign: 'right', color: ns.ocean180, fontWeight: 600 }}>{fmt(v.ytdSpend)}</td>
+                        <td style={{ padding: '0.75rem', textAlign: 'center', color: ns.ocean150 }}>{v.invoiceCount}</td>
+                        <td style={{ padding: '0.75rem', textAlign: 'right', color: ns.ocean150 }}>{fmt(v.avgInvoice)}</td>
+                        <td style={{ padding: '0.75rem', textAlign: 'center', fontWeight: 600, color: v.onTimePercent >= 95 ? ns.pine : v.onTimePercent >= 85 ? ns.yellow : ns.rose }}>{v.onTimePercent}%</td>
+                        <td style={{ padding: '0.75rem', textAlign: 'center', color: ns.ocean150 }}>{v.avgDaysToPay}</td>
+                        <td style={{ padding: '0.75rem', textAlign: 'center', fontWeight: 600, color: v.discountCaptureRate >= 90 ? ns.pine : v.discountCaptureRate >= 70 ? ns.yellow : ns.rose }}>{v.discountCaptureRate}%</td>
+                        <td style={{ padding: '0.75rem', textAlign: 'center', color: ns.ocean150 }}>{v.relationshipYears}</td>
+                        <td style={{ padding: '0.75rem', textAlign: 'center' }}>
+                          <span style={{ background: v.healthScore === 'A' ? ns.pine : v.healthScore === 'B' ? ns.yellow : ns.rose, color: v.healthScore === 'B' ? ns.ocean180 : ns.white, padding: '0.125rem 0.5rem', borderRadius: '12px', fontSize: '0.6875rem', fontWeight: 600 }}>{v.healthScore}</span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
+              <div style={card}>
+                <h3 style={{ color: ns.ocean180, fontSize: '1.125rem', fontWeight: 600, marginBottom: '1rem' }}>Vendor Spend Distribution</h3>
+                <DonutChart vendors={liveData.topVendors} height={260} />
+                <div style={{ marginTop: '1rem', padding: '1rem', background: '#FFF5F5', border: '1px solid ' + ns.rose, borderRadius: '6px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.4rem' }}>
+                    <AlertTriangle size={16} color={ns.rose} />
+                    <strong style={{ fontSize: '0.875rem', color: ns.ocean180 }}>Concentration Risk Alert</strong>
+                  </div>
+                  <div style={{ fontSize: '0.875rem', color: ns.ocean150 }}>Top 3 vendors = 62% of spend. Consider diversifying critical services.</div>
+                </div>
+              </div>
+
+              <div style={card}>
+                <h3 style={{ color: ns.ocean180, fontSize: '1.125rem', fontWeight: 600, marginBottom: '1rem' }}>Spend by Category</h3>
+                {['IT Services','Professional Services','IT Hardware','Consulting','Services'].map((cat, i) => {
+                  const vends = liveData.topVendors.filter(v => v.category === cat);
+                  const spend = vends.reduce((s, v) => s + v.ytdSpend, 0);
+                  const pct   = (spend / totalYTDSpend) * 100;
+                  if (!spend) return null;
+                  return (
+                    <div key={i} style={{ marginBottom: '1rem' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.4rem' }}>
+                        <span style={{ fontSize: '0.875rem', color: ns.ocean180, fontWeight: 500 }}>{cat}</span>
+                        <span style={{ fontSize: '0.875rem', color: ns.ocean150, fontWeight: 600 }}>{fmt(spend)} ({pct.toFixed(1)}%)</span>
+                      </div>
+                      <div style={{ background: ns.ocean10, height: '8px', borderRadius: '4px', overflow: 'hidden' }}>
+                        <div style={{ background: chartColors[i % chartColors.length], height: '100%', width: pct + '%' }} />
+                      </div>
+                      <div style={{ fontSize: '0.75rem', color: ns.ocean150, marginTop: '0.2rem' }}>
+                        {vends.length} vendor{vends.length !== 1 ? 's' : ''} · Avg: {fmt(spend / vends.length)}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div style={card}>
+              <h3 style={{ color: ns.ocean180, fontSize: '1.125rem', fontWeight: 600, marginBottom: '1rem' }}>Relationship Health Indicators</h3>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(180px,1fr))', gap: '1rem' }}>
+                {[
+                  { label: 'Avg Relationship Length',  value: (liveData.topVendors.reduce((s,v) => s+v.relationshipYears,0)/liveData.topVendors.length).toFixed(1) + ' years' },
+                  { label: 'Overall Discount Capture', value: (liveData.topVendors.reduce((s,v) => s+v.discountCaptureRate,0)/liveData.topVendors.length).toFixed(0) + '%', color: ns.pine },
+                  { label: 'Avg On-Time Payment',      value: (liveData.topVendors.reduce((s,v) => s+v.onTimePercent,0)/liveData.topVendors.length).toFixed(1) + '%', color: ns.pine },
+                  { label: 'Vendors with A Rating',    value: liveData.topVendors.filter(v => v.healthScore === 'A').length + ' of ' + liveData.topVendors.length, color: ns.pine },
+                ].map((m, i) => (
+                  <div key={i} style={{ padding: '1rem', background: ns.ocean10, borderRadius: '6px', textAlign: 'center' }}>
+                    <div style={{ fontSize: '0.75rem', color: ns.ocean150, marginBottom: '0.25rem' }}>{m.label}</div>
+                    <div style={{ fontSize: '1.5rem', fontWeight: 600, color: m.color || ns.ocean120 }}>{m.value}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ── COMPLIANCE ── */}
+        {selectedView === 'compliance' && (
+          <div style={{ display: 'grid', gap: '1.5rem' }}>
+            <div style={card}>
+              <h3 style={{ color: ns.ocean180, fontSize: '1.125rem', fontWeight: 600, marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <Shield size={20} /> Compliance & Controls Dashboard
+              </h3>
+              <div style={{ display: 'grid', gap: '1rem' }}>
+                {[
+                  { Icon: CheckCircle, color: ns.pine,   bg: '#F0FFF4', title: 'Segregation of Duties (SoD)',    sub: 'No conflicts detected in last 90 days',              badge: 'COMPLIANT', badgeBg: ns.pine   },
+                  { Icon: CheckCircle, color: ns.pine,   bg: '#F0FFF4', title: 'Duplicate Invoice Detection',    sub: '3 duplicates caught · 0 processed · 100% catch rate', badge: 'ACTIVE',    badgeBg: ns.pine   },
+                  { Icon: AlertCircle, color: ns.yellow, bg: '#FFFBF0', title: '1099 Reporting Readiness',       sub: '18 vendors requiring 1099 · 2 missing W-9 forms',      badge: 'REVIEW',    badgeBg: ns.yellow },
+                  { Icon: CheckCircle, color: ns.pine,   bg: '#F0FFF4', title: '3-Way Match Validation',         sub: '287 of 295 invoices matched · 8 pending review',        badge: '97% RATE',  badgeBg: ns.pine   },
+                  { Icon: Database,    color: ns.pine,   bg: '#F0FFF4', title: 'Vendor Master Data Quality',     sub: '142 active vendors · All validated · 0 duplicates',     badge: 'CLEAN',     badgeBg: ns.pine   },
+                ].map((item, i) => (
+                  <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem', background: item.bg, borderRadius: '6px', border: '1px solid ' + item.color }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                      <item.Icon size={24} color={item.color} />
+                      <div>
+                        <div style={{ fontSize: '0.875rem', fontWeight: 600, color: ns.ocean180 }}>{item.title}</div>
+                        <div style={{ fontSize: '0.75rem', color: ns.ocean150 }}>{item.sub}</div>
+                      </div>
+                    </div>
+                    <span style={{ background: item.badgeBg, color: item.badgeBg === ns.yellow ? ns.ocean180 : ns.white, padding: '0.25rem 0.75rem', borderRadius: '12px', fontSize: '0.75rem', fontWeight: 600, whiteSpace: 'nowrap' }}>
+                      {item.badge}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div style={card}>
+              <h3 style={{ color: ns.ocean180, fontSize: '1.125rem', fontWeight: 600, marginBottom: '1rem' }}>YTD 2025 Audit Trail Summary</h3>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(160px,1fr))', gap: '1rem' }}>
+                {[
+                  { value: '2,847', label: 'Bills Processed' },
+                  { value: '2,614', label: 'Payments Made' },
+                  { value: '4.2',   label: 'Avg Processing Days' },
+                  { value: '98.5%', label: 'On-Time Rate',      color: ns.pine },
+                  { value: '$127K', label: 'Discounts Captured', color: ns.pine },
+                  { value: '92',    label: 'AP Health Score',    color: ns.pine },
+                ].map((m, i) => (
+                  <div key={i} style={{ padding: '1rem', background: ns.ocean10, borderRadius: '6px', textAlign: 'center' }}>
+                    <div style={{ fontSize: '2rem', fontWeight: 600, color: m.color || ns.ocean120 }}>{m.value}</div>
+                    <div style={{ fontSize: '0.875rem', color: ns.ocean150 }}>{m.label}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div style={card}>
+              <h3 style={{ color: ns.ocean180, fontSize: '1.125rem', fontWeight: 600, marginBottom: '1rem' }}>Risk Monitoring</h3>
+              <div style={{ display: 'grid', gap: '1rem' }}>
+                {[
+                  { bg: '#FFF5F5', border: ns.rose,   Icon: AlertTriangle, color: ns.rose,   title: 'Vendor Concentration Risk',   badge: 'HIGH RISK',   badgeBg: ns.rose,   sub: 'Top 3 vendors represent 62% of spend. Single point of failure risk for IT Services and Professional Services.' },
+                  { bg: '#FFFBF0', border: ns.yellow, Icon: Clock,         color: ns.yellow, title: 'Payment Terms Opportunity',  badge: 'OPPORTUNITY', badgeBg: ns.yellow, sub: 'Current DPO of ' + avgDPO + ' days is below target of 45 days. Opportunity to extend payment terms.' },
+                  { bg: '#F0FFF4', border: ns.pine,   Icon: Award,         color: ns.pine,   title: 'Discount Capture Performance', badge: 'STRONG',     badgeBg: ns.pine,   sub: 'Overall discount capture rate above 75% industry benchmark. YTD savings: $127K. Continue current strategy.' },
+                ].map((r, i) => (
+                  <div key={i} style={{ padding: '1rem', background: r.bg, borderRadius: '6px', border: '1px solid ' + r.border }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                      <div style={{ flex: 1 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.4rem' }}>
+                          <r.Icon size={20} color={r.color} />
+                          <strong style={{ fontSize: '0.875rem', color: ns.ocean180 }}>{r.title}</strong>
+                        </div>
+                        <div style={{ fontSize: '0.875rem', color: ns.ocean150, lineHeight: 1.5 }}>{r.sub}</div>
+                      </div>
+                      <span style={{ background: r.badgeBg, color: r.badgeBg === ns.yellow ? ns.ocean180 : ns.white, padding: '0.25rem 0.75rem', borderRadius: '12px', fontSize: '0.75rem', fontWeight: 600, marginLeft: '1rem', whiteSpace: 'nowrap' }}>{r.badge}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ── BATCHES ── */}
+        {selectedView === 'batches' && (
+          <div style={{ display: 'grid', gap: '1.5rem' }}>
+            <div style={card}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+                <h3 style={{ color: ns.ocean180, fontSize: '1.125rem', fontWeight: 600, margin: 0 }}>Payment Batch Execution Center</h3>
+                <div style={{ display: 'flex', gap: '0.5rem' }}>
+                  <button style={{ background: ns.pine, color: ns.white, border: 'none', borderRadius: '6px', padding: '0.5rem 1rem', fontSize: '0.875rem', fontWeight: 500, cursor: 'pointer', fontFamily: 'inherit' }}>+ Create ACH Batch</button>
+                  <button style={{ background: ns.ocean120, color: ns.white, border: 'none', borderRadius: '6px', padding: '0.5rem 1rem', fontSize: '0.875rem', fontWeight: 500, cursor: 'pointer', fontFamily: 'inherit' }}>Print Checks</button>
+                </div>
+              </div>
+              <div style={{ overflowX: 'auto' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.875rem' }}>
+                  <thead>
+                    <tr style={{ background: ns.ocean10 }}>
+                      {['Batch ID','Date','Method','Invoices','Amount','Status','Approver','Action'].map(h => (
+                        <th key={h} style={{ padding: '0.75rem', textAlign: 'left', fontWeight: 600, color: ns.ocean150, borderBottom: '1px solid ' + ns.ocean30, whiteSpace: 'nowrap' }}>{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {paymentBatches.map((b, i) => (
+                      <tr key={i} style={{ background: i%2===0 ? ns.white : ns.ocean10, borderBottom: '1px solid ' + ns.ocean30, cursor: 'pointer' }}
+                          onClick={() => setSelectedBatch(b === selectedBatch ? null : b)}>
+                        <td style={{ padding: '0.75rem', color: ns.ocean120, fontWeight: 500 }}>{b.id}</td>
+                        <td style={{ padding: '0.75rem', color: ns.ocean150 }}>{b.date}</td>
+                        <td style={{ padding: '0.75rem' }}>
+                          <span style={{ background: b.method === 'ACH' ? ns.ocean60 : ns.yellow, color: ns.white, padding: '0.125rem 0.5rem', borderRadius: '12px', fontSize: '0.6875rem', fontWeight: 500 }}>{b.method}</span>
+                        </td>
+                        <td style={{ padding: '0.75rem', color: ns.ocean150 }}>{b.invoices}</td>
+                        <td style={{ padding: '0.75rem', color: ns.ocean180, fontWeight: 600 }}>{fmt(b.amount)}</td>
+                        <td style={{ padding: '0.75rem' }}><StatusBadge status={b.status} small /></td>
+                        <td style={{ padding: '0.75rem', color: ns.ocean150, fontSize: '0.8125rem' }}>{b.approver || '—'}</td>
+                        <td style={{ padding: '0.75rem' }}>
+                          {b.status === 'Draft' && <button style={{ background: 'transparent', color: ns.ocean120, border: '1px solid ' + ns.ocean120, borderRadius: '4px', padding: '0.25rem 0.75rem', fontSize: '0.75rem', cursor: 'pointer', fontFamily: 'inherit' }}>Review</button>}
+                          {b.status === 'Pending Approval' && <button style={{ background: ns.pine, color: ns.white, border: 'none', borderRadius: '4px', padding: '0.25rem 0.75rem', fontSize: '0.75rem', cursor: 'pointer', fontFamily: 'inherit' }}>Approve</button>}
+                          {b.status === 'Approved' && <button style={{ background: ns.ocean120, color: ns.white, border: 'none', borderRadius: '4px', padding: '0.25rem 0.75rem', fontSize: '0.75rem', cursor: 'pointer', fontFamily: 'inherit' }}>Transmit</button>}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {selectedBatch && (
+              <div style={{ ...card, boxShadow: '0 4px 12px rgba(19,33,44,0.2)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                  <h3 style={{ color: ns.ocean180, fontSize: '1.125rem', fontWeight: 600, margin: 0 }}>Batch Details: {selectedBatch.id}</h3>
+                  <button onClick={() => setSelectedBatch(null)} style={{ background: 'transparent', border: 'none', color: ns.ocean150, fontSize: '1.5rem', cursor: 'pointer', padding: '0.25rem' }}>×</button>
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(180px,1fr))', gap: '1rem', marginBottom: '1.5rem' }}>
+                  {[
+                    { label: 'Payment Date',   value: selectedBatch.date },
+                    { label: 'Method',         value: selectedBatch.method },
+                    { label: 'Total Invoices', value: selectedBatch.invoices },
+                    { label: 'Total Amount',   value: fmt(selectedBatch.amount), large: true },
+                  ].map((d, i) => (
+                    <div key={i}>
+                      <div style={{ fontSize: '0.75rem', color: ns.ocean150, marginBottom: '0.25rem' }}>{d.label}</div>
+                      <div style={{ fontSize: d.large ? '1.25rem' : '1rem', fontWeight: 600, color: d.large ? ns.ocean120 : ns.ocean180 }}>{d.value}</div>
+                    </div>
+                  ))}
+                </div>
+                <div style={{ padding: '1rem', background: ns.ocean10, borderRadius: '6px', marginBottom: '1rem' }}>
+                  <div style={{ fontSize: '0.875rem', fontWeight: 600, color: ns.ocean180, marginBottom: '0.4rem' }}>Included Vendors</div>
+                  <div style={{ fontSize: '0.875rem', color: ns.ocean150 }}>{selectedBatch.vendors.join(', ')}</div>
+                </div>
+                {selectedBatch.status === 'Pending Approval' && (
+                  <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end' }}>
+                    <button style={{ background: 'transparent', color: ns.rose, border: '1px solid ' + ns.rose, borderRadius: '6px', padding: '0.5rem 1.5rem', fontSize: '0.875rem', fontWeight: 500, cursor: 'pointer', fontFamily: 'inherit' }}>Reject</button>
+                    <button style={{ background: ns.pine, color: ns.white, border: 'none', borderRadius: '6px', padding: '0.5rem 1.5rem', fontSize: '0.875rem', fontWeight: 500, cursor: 'pointer', fontFamily: 'inherit' }}>Approve Batch</button>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+
+      </div>
+    </div>
+  );
+};
+
+ReactDOM.render(<APCashFlowDashboard />, document.getElementById('root'));
+</script>
+</body>
+</html>

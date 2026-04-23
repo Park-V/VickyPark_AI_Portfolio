@@ -1,0 +1,695 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FY25 Inventory & OpEx Optimization Dashboard</title>
+<script src="https://cdn.jsdelivr.net/npm/react@18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/react-dom@18.2.0/umd/react-dom.production.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@babel/standalone@7.23.2/babel.min.js"></script>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif; background: #F1EFED; color: #264759; }
+select { appearance: none; -webkit-appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%2394BFCE' d='M6 8L1 3h10z'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 10px center; padding-right: 28px !important; cursor: pointer; }
+@media print {
+  body, html { background: #FFFFFF !important; }
+  .no-print { display: none !important; }
+  tbody tr:nth-child(even) { background: #F5FAFC !important; }
+}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const { useState, useEffect, useRef } = React;
+
+const ns = {
+  ocean120: '#36677D', ocean180: '#13212C', ocean150: '#264759',
+  ocean60: '#94BFCE', ocean30: '#E7F2F5', ocean10: '#F5FAFC',
+  pine: '#86B596', rose: '#FF8675', yellow: '#E2C06B',
+  neutral: '#F1EFED', white: '#FFFFFF'
+};
+
+const card = {
+  background: ns.white, borderRadius: '8px', padding: '1.5rem',
+  boxShadow: '0 1px 3px rgba(19,33,44,0.1)', border: '1px solid ' + ns.ocean30
+};
+
+const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+// ── Inventory by Category (stacked, Jan–Dec, $M) ──────────────────────────────
+const invByCategoryData = {
+  raw:      [1.2,1.1,1.3,1.4,1.2,1.3,1.1,1.2,1.4,1.3,1.2,1.1],
+  wip:      [0.8,0.9,0.7,0.8,0.9,0.8,1.0,0.9,0.8,0.9,0.8,0.7],
+  finished: [2.4,2.3,2.5,2.6,2.4,2.3,2.5,2.4,2.6,2.5,2.4,2.3],
+};
+
+// ── Inventory Turnover Trend (actual, monthly) ────────────────────────────────
+const turnoverActual = [5.8,5.9,6.0,6.1,6.0,6.1,6.2,6.1,6.3,6.2,6.2,6.2];
+
+// ── Monthly OpEx Trend ($M) ───────────────────────────────────────────────────
+const opexBudgetMonthly = [1.60,1.60,1.60,1.55,1.55,1.55,1.50,1.50,1.50,1.45,1.45,1.45];
+const opexActualMonthly = [1.52,1.55,1.49,1.48,1.51,1.50,1.46,1.53,1.47,1.44,1.49,1.45];
+
+// ── OpEx Budget vs Actual ─────────────────────────────────────────────────────
+const opexCategories = [
+  { name: 'Selling',     budget: 5.8, actual: 5.4 },
+  { name: 'G&A',         budget: 4.2, actual: 4.5 },
+  { name: 'R&D',         budget: 3.6, actual: 3.3 },
+  { name: 'Operations',  budget: 2.8, actual: 2.7 },
+  { name: 'IT',          budget: 1.8, actual: 1.5 },
+  { name: 'Facilities',  budget: 1.2, actual: 1.1 },
+];
+
+// ── Slow movers ───────────────────────────────────────────────────────────────
+const slowMovers = [
+  { sku: 'INV-2847', category: 'Finished Goods', days: 124, value: '$284K', action: 'Markdown 15%',    actionType: 'rose' },
+  { sku: 'INV-1923', category: 'Raw Materials',  days: 112, value: '$198K', action: 'Return to Vendor', actionType: 'rose' },
+  { sku: 'INV-3341', category: 'WIP',            days: 98,  value: '$156K', action: 'Expedite',         actionType: 'yellow' },
+  { sku: 'INV-0847', category: 'Finished Goods', days: 94,  value: '$143K', action: 'Markdown 10%',    actionType: 'yellow' },
+  { sku: 'INV-2201', category: 'Raw Materials',  days: 91,  value: '$128K', action: 'Reorder Review',  actionType: 'yellow' },
+  { sku: 'INV-4410', category: 'Finished Goods', days: 89,  value: '$112K', action: 'Bundle Offer',    actionType: 'pine' },
+];
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+const Badge = ({ label, type }) => {
+  const bg = type === 'rose' ? ns.rose : type === 'yellow' ? ns.yellow : type === 'pine' ? ns.pine : ns.ocean60;
+  const color = type === 'yellow' ? ns.ocean180 : ns.white;
+  return (
+    <span style={{ background: bg, color, padding: '0.2rem 0.55rem', borderRadius: '10px',
+      fontSize: '0.62rem', fontWeight: 700, textTransform: 'uppercase', whiteSpace: 'nowrap' }}>
+      {label}
+    </span>
+  );
+};
+
+const Select = ({ value, onChange, options, label }) => (
+  <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.8rem', color: ns.ocean60 }}>
+    {label}
+    <select value={value} onChange={e => onChange(e.target.value)}
+      style={{ background: ns.ocean150, color: ns.white, border: '1px solid ' + ns.ocean120,
+        borderRadius: '6px', padding: '0.35rem 28px 0.35rem 0.7rem', fontSize: '0.8rem', outline: 'none' }}>
+      {options.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+    </select>
+  </label>
+);
+
+// ── Chart components ──────────────────────────────────────────────────────────
+
+const StackedBarChart = ({ quarter, category }) => {
+  const ref = useRef(null);
+  const chartRef = useRef(null);
+  useEffect(() => {
+    if (chartRef.current) { chartRef.current.destroy(); chartRef.current = null; }
+    const qMap = { 'Q1': [0,1,2], 'Q2': [3,4,5], 'Q3': [6,7,8], 'Q4': [9,10,11], 'FY25': null };
+    const idxs = qMap[quarter] || months.map((_,i) => i);
+    const labels = idxs.map(i => months[i]);
+    const raw = idxs.map(i => invByCategoryData.raw[i]);
+    const wip = idxs.map(i => invByCategoryData.wip[i]);
+    const fin = idxs.map(i => invByCategoryData.finished[i]);
+
+    const datasets = [];
+    if (category === 'All' || category === 'Raw Materials')
+      datasets.push({ label: 'Raw Materials', data: raw, backgroundColor: ns.ocean120, borderRadius: 3 });
+    if (category === 'All' || category === 'WIP')
+      datasets.push({ label: 'WIP', data: wip, backgroundColor: ns.yellow, borderRadius: 3 });
+    if (category === 'All' || category === 'Finished Goods')
+      datasets.push({ label: 'Finished Goods', data: fin, backgroundColor: ns.pine, borderRadius: 3 });
+
+    chartRef.current = new Chart(ref.current.getContext('2d'), {
+      type: 'bar',
+      data: { labels, datasets },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: {
+          legend: { position: 'bottom', labels: { color: ns.ocean150, font: { size: 11 }, boxWidth: 12, padding: 12 } },
+          tooltip: { callbacks: { label: ctx => ` ${ctx.dataset.label}: $${ctx.parsed.y.toFixed(1)}M` },
+            backgroundColor: ns.white, titleColor: ns.ocean180, bodyColor: ns.ocean150,
+            borderColor: ns.ocean30, borderWidth: 1 }
+        },
+        scales: {
+          x: { stacked: true, grid: { display: false }, ticks: { color: ns.ocean150, font: { size: 11 } } },
+          y: { stacked: true, grid: { color: ns.ocean30 }, ticks: { color: ns.ocean150, font: { size: 11 },
+            callback: v => '$' + v.toFixed(1) + 'M' } }
+        }
+      }
+    });
+    return () => { if (chartRef.current) { chartRef.current.destroy(); chartRef.current = null; } };
+  }, [quarter, category]);
+  return <canvas ref={ref} />;
+};
+
+const DonutChart = () => {
+  const ref = useRef(null);
+  const chartRef = useRef(null);
+  useEffect(() => {
+    if (chartRef.current) { chartRef.current.destroy(); chartRef.current = null; }
+    chartRef.current = new Chart(ref.current.getContext('2d'), {
+      type: 'doughnut',
+      data: {
+        labels: ['Selling','G&A','R&D','Operations','IT','Facilities'],
+        datasets: [{
+          data: [29, 24, 18, 15, 9, 5],
+          backgroundColor: [ns.ocean120, ns.pine, ns.yellow, ns.rose, ns.ocean60, ns.ocean150],
+          borderWidth: 2, borderColor: ns.white, hoverOffset: 6
+        }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        cutout: '62%',
+        plugins: {
+          legend: { position: 'bottom', labels: { color: ns.ocean150, font: { size: 11 }, boxWidth: 12, padding: 10 } },
+          tooltip: { callbacks: { label: ctx => ` ${ctx.label}: ${ctx.parsed}%` },
+            backgroundColor: ns.white, titleColor: ns.ocean180, bodyColor: ns.ocean150,
+            borderColor: ns.ocean30, borderWidth: 1 }
+        }
+      }
+    });
+    return () => { if (chartRef.current) { chartRef.current.destroy(); chartRef.current = null; } };
+  }, []);
+  return <canvas ref={ref} />;
+};
+
+const AgingBarChart = ({ category }) => {
+  const ref = useRef(null);
+  const chartRef = useRef(null);
+  useEffect(() => {
+    if (chartRef.current) { chartRef.current.destroy(); chartRef.current = null; }
+    const baseData = [3.2, 2.4, 1.5, 1.4];
+    const filteredData = category === 'All' ? baseData
+      : category === 'Raw Materials' ? [1.1, 0.8, 0.5, 0.5]
+      : category === 'WIP'           ? [0.7, 0.6, 0.4, 0.3]
+      : [1.4, 1.0, 0.6, 0.6];
+
+    chartRef.current = new Chart(ref.current.getContext('2d'), {
+      type: 'bar',
+      data: {
+        labels: ['0–30 Days','31–60 Days','61–90 Days','90+ Days'],
+        datasets: [{
+          label: 'Inventory Value ($M)',
+          data: filteredData,
+          backgroundColor: [ns.pine, ns.ocean120, ns.yellow, ns.rose],
+          borderRadius: 5
+        }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: { callbacks: { label: ctx => ` $${ctx.parsed.y.toFixed(1)}M` },
+            backgroundColor: ns.white, titleColor: ns.ocean180, bodyColor: ns.ocean150,
+            borderColor: ns.ocean30, borderWidth: 1 }
+        },
+        scales: {
+          x: { grid: { display: false }, ticks: { color: ns.ocean150, font: { size: 11 } } },
+          y: { grid: { color: ns.ocean30 }, ticks: { color: ns.ocean150, font: { size: 11 },
+            callback: v => '$' + v.toFixed(1) + 'M' } }
+        }
+      }
+    });
+    return () => { if (chartRef.current) { chartRef.current.destroy(); chartRef.current = null; } };
+  }, [category]);
+  return <canvas ref={ref} />;
+};
+
+const TurnoverLineChart = ({ quarter }) => {
+  const ref = useRef(null);
+  const chartRef = useRef(null);
+  useEffect(() => {
+    if (chartRef.current) { chartRef.current.destroy(); chartRef.current = null; }
+    const qMap = { 'Q1': [0,1,2], 'Q2': [3,4,5], 'Q3': [6,7,8], 'Q4': [9,10,11], 'FY25': null };
+    const idxs = qMap[quarter] || months.map((_,i) => i);
+    const labels = idxs.map(i => months[i]);
+    const actual = idxs.map(i => turnoverActual[i]);
+    const target = idxs.map(() => 7.0);
+
+    chartRef.current = new Chart(ref.current.getContext('2d'), {
+      type: 'line',
+      data: {
+        labels,
+        datasets: [
+          { label: 'Actual Turnover', data: actual, borderColor: ns.ocean120, backgroundColor: ns.ocean120 + '22',
+            tension: 0.3, pointRadius: 4, pointBackgroundColor: ns.ocean120, fill: true, borderWidth: 2 },
+          { label: 'Target (7.0x)', data: target, borderColor: ns.rose, borderDash: [6,4],
+            pointRadius: 0, borderWidth: 2, fill: false }
+        ]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: {
+          legend: { position: 'bottom', labels: { color: ns.ocean150, font: { size: 11 }, boxWidth: 12, padding: 12 } },
+          tooltip: { callbacks: { label: ctx => ` ${ctx.dataset.label}: ${ctx.parsed.y.toFixed(1)}x` },
+            backgroundColor: ns.white, titleColor: ns.ocean180, bodyColor: ns.ocean150,
+            borderColor: ns.ocean30, borderWidth: 1 }
+        },
+        scales: {
+          x: { grid: { display: false }, ticks: { color: ns.ocean150, font: { size: 11 } } },
+          y: { min: 5.0, max: 8.0, grid: { color: ns.ocean30 }, ticks: { color: ns.ocean150, font: { size: 11 },
+            callback: v => v.toFixed(1) + 'x' } }
+        }
+      }
+    });
+    return () => { if (chartRef.current) { chartRef.current.destroy(); chartRef.current = null; } };
+  }, [quarter]);
+  return <canvas ref={ref} />;
+};
+
+const OpExBudgetChart = () => {
+  const ref = useRef(null);
+  const chartRef = useRef(null);
+  useEffect(() => {
+    if (chartRef.current) { chartRef.current.destroy(); chartRef.current = null; }
+    chartRef.current = new Chart(ref.current.getContext('2d'), {
+      type: 'bar',
+      data: {
+        labels: opexCategories.map(c => c.name),
+        datasets: [
+          { label: 'Budget', data: opexCategories.map(c => c.budget), backgroundColor: ns.ocean60, borderRadius: 4 },
+          { label: 'Actual', data: opexCategories.map(c => c.actual), backgroundColor: ns.ocean120, borderRadius: 4 }
+        ]
+      },
+      options: {
+        indexAxis: 'y',
+        responsive: true, maintainAspectRatio: false,
+        plugins: {
+          legend: { position: 'bottom', labels: { color: ns.ocean150, font: { size: 11 }, boxWidth: 12, padding: 12 } },
+          tooltip: { callbacks: { label: ctx => ` ${ctx.dataset.label}: $${ctx.parsed.x.toFixed(1)}M` },
+            backgroundColor: ns.white, titleColor: ns.ocean180, bodyColor: ns.ocean150,
+            borderColor: ns.ocean30, borderWidth: 1 }
+        },
+        scales: {
+          x: { grid: { color: ns.ocean30 }, ticks: { color: ns.ocean150, font: { size: 11 },
+            callback: v => '$' + v.toFixed(0) + 'M' } },
+          y: { grid: { display: false }, ticks: { color: ns.ocean150, font: { size: 11 } } }
+        }
+      }
+    });
+    return () => { if (chartRef.current) { chartRef.current.destroy(); chartRef.current = null; } };
+  }, []);
+  return <canvas ref={ref} />;
+};
+
+const OpExTrendChart = ({ quarter }) => {
+  const ref = useRef(null);
+  const chartRef = useRef(null);
+  useEffect(() => {
+    if (chartRef.current) { chartRef.current.destroy(); chartRef.current = null; }
+    const qMap = { 'Q1': [0,1,2], 'Q2': [3,4,5], 'Q3': [6,7,8], 'Q4': [9,10,11], 'FY25': null };
+    const idxs = qMap[quarter] || months.map((_,i) => i);
+    const labels = idxs.map(i => months[i]);
+    const budget = idxs.map(i => opexBudgetMonthly[i]);
+    const actual = idxs.map(i => opexActualMonthly[i]);
+
+    chartRef.current = new Chart(ref.current.getContext('2d'), {
+      type: 'line',
+      data: {
+        labels,
+        datasets: [
+          { label: 'Actual OpEx', data: actual, borderColor: ns.ocean120, backgroundColor: ns.ocean120 + '22',
+            tension: 0.3, pointRadius: 4, pointBackgroundColor: ns.ocean120, fill: true, borderWidth: 2 },
+          { label: 'Budget', data: budget, borderColor: ns.ocean60, borderDash: [6,4],
+            pointRadius: 3, pointBackgroundColor: ns.ocean60, borderWidth: 2, fill: false }
+        ]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: {
+          legend: { position: 'bottom', labels: { color: ns.ocean150, font: { size: 11 }, boxWidth: 12, padding: 12 } },
+          tooltip: { callbacks: { label: ctx => ` ${ctx.dataset.label}: $${ctx.parsed.y.toFixed(2)}M` },
+            backgroundColor: ns.white, titleColor: ns.ocean180, bodyColor: ns.ocean150,
+            borderColor: ns.ocean30, borderWidth: 1 }
+        },
+        scales: {
+          x: { grid: { display: false }, ticks: { color: ns.ocean150, font: { size: 11 } } },
+          y: { min: 1.3, max: 1.8, grid: { color: ns.ocean30 }, ticks: { color: ns.ocean150, font: { size: 11 },
+            callback: v => '$' + v.toFixed(2) + 'M' } }
+        }
+      }
+    });
+    return () => { if (chartRef.current) { chartRef.current.destroy(); chartRef.current = null; } };
+  }, [quarter]);
+  return <canvas ref={ref} />;
+};
+
+// ── Main App ──────────────────────────────────────────────────────────────────
+const App = () => {
+  const [tab, setTab] = useState('overview');
+  const [quarter, setQuarter] = useState('FY25');
+  const [category, setCategory] = useState('All');
+
+  const quarterOpts = [
+    { value: 'FY25', label: 'FY25 Full Year' },
+    { value: 'Q1',  label: 'Q1 (Jan–Mar)' },
+    { value: 'Q2',  label: 'Q2 (Apr–Jun)' },
+    { value: 'Q3',  label: 'Q3 (Jul–Sep)' },
+    { value: 'Q4',  label: 'Q4 (Oct–Dec)' },
+  ];
+  const categoryOpts = [
+    { value: 'All',            label: 'All Categories' },
+    { value: 'Raw Materials',  label: 'Raw Materials' },
+    { value: 'WIP',            label: 'WIP' },
+    { value: 'Finished Goods', label: 'Finished Goods' },
+  ];
+
+  const tabs = [
+    { id: 'overview',   label: 'Overview' },
+    { id: 'inventory',  label: 'Inventory Analysis' },
+    { id: 'opex',       label: 'OpEx Analysis' },
+  ];
+
+  const kpis = [
+    { label: 'Inventory Turnover', value: '6.2x', sub: 'Target: 7.0x', bg: ns.yellow, fg: ns.ocean180 },
+    { label: 'Days Inventory Outstanding', value: '58 days', sub: 'Target: <50 days', bg: ns.yellow, fg: ns.ocean180 },
+    { label: 'Total OpEx', value: '$18.4M', sub: '−3.2% vs budget', bg: ns.pine, fg: ns.white },
+    { label: 'Carrying Cost Rate', value: '24%', sub: 'Industry avg: 25%', bg: ns.pine, fg: ns.white },
+  ];
+
+  const recommendations = [
+    { title: 'Slow-Mover Alert', body: '16% of inventory (90+ days) — $1.4M at risk. Recommend markdown or return-to-vendor program for top 12 SKUs.' },
+    { title: 'G&A Overrun', body: '$300K over budget YTD. Primary driver: contract services. Renegotiation window opens Q1.' },
+    { title: 'Turnover Gap', body: '6.2x vs 7.0x target. Closing the gap adds ~$2.1M in freed cash — review top 20 slow-moving SKUs.' },
+  ];
+
+  return (
+    <div style={{ minHeight: '100vh', background: ns.neutral }}>
+
+      {/* ── Header ── */}
+      <div style={{ background: ns.ocean180, padding: '0 2rem' }}>
+        <div style={{ maxWidth: '1400px', margin: '0 auto', padding: '1.25rem 0',
+          display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
+          <div>
+            <div style={{ fontSize: '0.7rem', fontWeight: 600, color: ns.ocean60,
+              textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '0.3rem' }}>
+              Business Analytics Demo
+            </div>
+            <h1 style={{ fontSize: '1.35rem', fontWeight: 700, color: ns.white, lineHeight: 1.2 }}>
+              FY25 Inventory &amp; OpEx Optimization Dashboard
+            </h1>
+          </div>
+          <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', flexWrap: 'wrap' }}>
+            <Select value={quarter} onChange={setQuarter} options={quarterOpts} label="Period:" />
+            <Select value={category} onChange={setCategory} options={categoryOpts} label="Category:" />
+          </div>
+        </div>
+      </div>
+
+      <div style={{ maxWidth: '1400px', margin: '0 auto', padding: '2rem' }}>
+
+        {/* ── KPI Strip ── */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1rem', marginBottom: '1.75rem' }}>
+          {kpis.map((k, i) => (
+            <div key={i} style={{ background: k.bg, borderRadius: '10px', padding: '1.4rem 1.5rem',
+              boxShadow: '0 2px 8px rgba(19,33,44,0.12)', textAlign: 'center' }}>
+              <div style={{ fontSize: '0.72rem', fontWeight: 600, color: k.fg, opacity: 0.8,
+                textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '0.5rem' }}>
+                {k.label}
+              </div>
+              <div style={{ fontSize: '2rem', fontWeight: 700, color: k.fg, lineHeight: 1 }}>
+                {k.value}
+              </div>
+              <div style={{ fontSize: '0.75rem', color: k.fg, opacity: 0.75, marginTop: '0.4rem' }}>
+                {k.sub}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* ── Tabs ── */}
+        <div style={{ display: 'flex', gap: '0.25rem', marginBottom: '1.5rem',
+          background: ns.white, borderRadius: '8px', padding: '0.35rem',
+          boxShadow: '0 1px 3px rgba(19,33,44,0.08)', border: '1px solid ' + ns.ocean30,
+          width: 'fit-content' }}>
+          {tabs.map(t => (
+            <button key={t.id} onClick={() => setTab(t.id)} style={{
+              padding: '0.5rem 1.3rem', borderRadius: '6px', border: 'none', cursor: 'pointer',
+              fontSize: '0.85rem', fontWeight: tab === t.id ? 700 : 500,
+              background: tab === t.id ? ns.ocean120 : 'transparent',
+              color: tab === t.id ? ns.white : ns.ocean150,
+              transition: 'all 0.15s ease'
+            }}>{t.label}</button>
+          ))}
+        </div>
+
+        {/* ══════════ TAB: OVERVIEW ══════════ */}
+        {tab === 'overview' && (
+          <div>
+            {/* Charts Row */}
+            <div style={{ display: 'grid', gridTemplateColumns: '3fr 2fr', gap: '1.5rem', marginBottom: '1.5rem' }}>
+
+              <div style={{ ...card }}>
+                <h2 style={{ fontSize: '1rem', fontWeight: 600, color: ns.ocean180, marginBottom: '1rem' }}>
+                  Inventory by Category
+                </h2>
+                <div style={{ height: '280px' }}>
+                  <StackedBarChart quarter={quarter} category={category} />
+                </div>
+              </div>
+
+              <div style={{ ...card }}>
+                <h2 style={{ fontSize: '1rem', fontWeight: 600, color: ns.ocean180, marginBottom: '1rem' }}>
+                  OpEx Distribution by Function
+                </h2>
+                <div style={{ height: '280px' }}>
+                  <DonutChart />
+                </div>
+              </div>
+            </div>
+
+            {/* AI Recommendations */}
+            <div style={{ marginBottom: '0.75rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '1rem' }}>
+                <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: ns.ocean120,
+                  boxShadow: '0 0 0 3px ' + ns.ocean30 }} />
+                <h2 style={{ fontSize: '1rem', fontWeight: 600, color: ns.ocean180 }}>AI-Powered Recommendations</h2>
+                <span style={{ fontSize: '0.68rem', fontWeight: 600, background: ns.ocean30, color: ns.ocean120,
+                  padding: '0.15rem 0.5rem', borderRadius: '10px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                  Auto-generated
+                </span>
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1rem' }}>
+                {recommendations.map((r, i) => (
+                  <div key={i} style={{ background: ns.ocean10, borderRadius: '8px', padding: '1.25rem 1.25rem 1.25rem 1.5rem',
+                    borderLeft: '4px solid ' + ns.ocean120, boxShadow: '0 1px 3px rgba(19,33,44,0.07)',
+                    border: '1px solid ' + ns.ocean30, borderLeftWidth: '4px', borderLeftColor: ns.ocean120 }}>
+                    <div style={{ fontSize: '0.78rem', fontWeight: 700, color: ns.ocean120, marginBottom: '0.5rem',
+                      textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                      {r.title}
+                    </div>
+                    <div style={{ fontSize: '0.85rem', color: ns.ocean150, lineHeight: 1.55 }}>{r.body}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ══════════ TAB: INVENTORY ANALYSIS ══════════ */}
+        {tab === 'inventory' && (
+          <div>
+            {/* Aging + Turnover */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem', marginBottom: '1.5rem' }}>
+
+              <div style={{ ...card }}>
+                <h2 style={{ fontSize: '1rem', fontWeight: 600, color: ns.ocean180, marginBottom: '0.5rem' }}>
+                  Inventory Aging Distribution
+                </h2>
+                <div style={{ display: 'flex', gap: '1rem', marginBottom: '1rem', flexWrap: 'wrap' }}>
+                  {[
+                    { label: '0–30 Days', pct: '38%', color: ns.pine },
+                    { label: '31–60 Days', pct: '28%', color: ns.ocean120 },
+                    { label: '61–90 Days', pct: '18%', color: ns.yellow },
+                    { label: '90+ Days',  pct: '16%', color: ns.rose },
+                  ].map((b, i) => (
+                    <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                      <div style={{ width: '10px', height: '10px', borderRadius: '2px', background: b.color }} />
+                      <span style={{ fontSize: '0.72rem', color: ns.ocean150 }}>{b.label}: <strong>{b.pct}</strong></span>
+                    </div>
+                  ))}
+                </div>
+                <div style={{ height: '260px' }}>
+                  <AgingBarChart category={category} />
+                </div>
+              </div>
+
+              <div style={{ ...card }}>
+                <h2 style={{ fontSize: '1rem', fontWeight: 600, color: ns.ocean180, marginBottom: '0.5rem' }}>
+                  Inventory Turnover Trend
+                </h2>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
+                  <span style={{ fontSize: '0.75rem', color: ns.ocean150 }}>Current: </span>
+                  <span style={{ fontSize: '0.85rem', fontWeight: 700, color: ns.yellow }}>6.2x</span>
+                  <span style={{ fontSize: '0.75rem', color: ns.ocean150 }}>vs target </span>
+                  <span style={{ fontSize: '0.85rem', fontWeight: 700, color: ns.rose }}>7.0x</span>
+                </div>
+                <div style={{ height: '260px' }}>
+                  <TurnoverLineChart quarter={quarter} />
+                </div>
+              </div>
+            </div>
+
+            {/* Slow Movers Table */}
+            <div style={{ ...card }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                <h2 style={{ fontSize: '1rem', fontWeight: 600, color: ns.ocean180 }}>
+                  Slow-Mover SKU Report
+                  <span style={{ marginLeft: '0.75rem', fontSize: '0.72rem', fontWeight: 600, background: ns.rose + '22',
+                    color: ns.rose, padding: '0.15rem 0.55rem', borderRadius: '10px' }}>
+                    $1.4M at risk (90+ days)
+                  </span>
+                </h2>
+              </div>
+              <div style={{ overflowX: 'auto' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
+                  <thead>
+                    <tr style={{ background: ns.ocean10, borderBottom: '2px solid ' + ns.ocean30 }}>
+                      {['SKU ID','Category','Days on Hand','Inventory Value','Action Recommended'].map(h => (
+                        <th key={h} style={{ padding: '0.75rem 1rem', textAlign: 'left', fontSize: '0.72rem',
+                          fontWeight: 700, color: ns.ocean120, textTransform: 'uppercase', letterSpacing: '0.05em',
+                          whiteSpace: 'nowrap' }}>{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {slowMovers.filter(s => category === 'All' || s.category === category).map((s, i) => (
+                      <tr key={s.sku} style={{ background: i % 2 === 0 ? ns.white : ns.ocean10,
+                        borderBottom: '1px solid ' + ns.ocean30 }}>
+                        <td style={{ padding: '0.75rem 1rem', fontWeight: 600, color: ns.ocean120 }}>{s.sku}</td>
+                        <td style={{ padding: '0.75rem 1rem', color: ns.ocean150 }}>{s.category}</td>
+                        <td style={{ padding: '0.75rem 1rem' }}>
+                          <span style={{ fontWeight: 700, color: s.days >= 100 ? ns.rose : s.days >= 90 ? ns.yellow : ns.ocean150 }}>
+                            {s.days}
+                          </span>
+                        </td>
+                        <td style={{ padding: '0.75rem 1rem', fontWeight: 600, color: ns.ocean180 }}>{s.value}</td>
+                        <td style={{ padding: '0.75rem 1rem' }}>
+                          <Badge label={s.action} type={s.actionType} />
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+                {slowMovers.filter(s => category === 'All' || s.category === category).length === 0 && (
+                  <div style={{ textAlign: 'center', padding: '2rem', color: ns.ocean150, fontSize: '0.85rem' }}>
+                    No slow movers for the selected category.
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ══════════ TAB: OPEX ANALYSIS ══════════ */}
+        {tab === 'opex' && (
+          <div>
+            {/* Budget vs Actual + Trend */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem', marginBottom: '1.5rem' }}>
+
+              <div style={{ ...card }}>
+                <h2 style={{ fontSize: '1rem', fontWeight: 600, color: ns.ocean180, marginBottom: '1rem' }}>
+                  Budget vs Actual by Function
+                </h2>
+                <div style={{ height: '300px' }}>
+                  <OpExBudgetChart />
+                </div>
+              </div>
+
+              <div style={{ ...card }}>
+                <h2 style={{ fontSize: '1rem', fontWeight: 600, color: ns.ocean180, marginBottom: '0.5rem' }}>
+                  Monthly OpEx Trend
+                </h2>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
+                  <span style={{ fontSize: '0.75rem', color: ns.ocean150 }}>Total YTD Actual: </span>
+                  <span style={{ fontSize: '0.85rem', fontWeight: 700, color: ns.pine }}>$18.4M</span>
+                  <span style={{ fontSize: '0.75rem', color: ns.ocean150 }}>vs Budget </span>
+                  <span style={{ fontSize: '0.85rem', fontWeight: 700, color: ns.ocean150 }}>$19.0M</span>
+                </div>
+                <div style={{ height: '280px' }}>
+                  <OpExTrendChart quarter={quarter} />
+                </div>
+              </div>
+            </div>
+
+            {/* Variance Table */}
+            <div style={{ ...card }}>
+              <h2 style={{ fontSize: '1rem', fontWeight: 600, color: ns.ocean180, marginBottom: '1rem' }}>
+                OpEx Variance by Function
+              </h2>
+              <div style={{ overflowX: 'auto' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
+                  <thead>
+                    <tr style={{ background: ns.ocean10, borderBottom: '2px solid ' + ns.ocean30 }}>
+                      {['Function','Budget ($M)','Actual ($M)','Variance ($M)','Variance %','Status'].map(h => (
+                        <th key={h} style={{ padding: '0.75rem 1rem', textAlign: 'left', fontSize: '0.72rem',
+                          fontWeight: 700, color: ns.ocean120, textTransform: 'uppercase', letterSpacing: '0.05em',
+                          whiteSpace: 'nowrap' }}>{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {opexCategories.map((c, i) => {
+                      const varDollar = c.actual - c.budget;
+                      const varPct = ((varDollar) / c.budget * 100);
+                      const over = varDollar > 0;
+                      const statusLabel = over ? 'Over Budget' : Math.abs(varPct) < 2 ? 'On Track' : 'Under Budget';
+                      const statusType  = over ? 'rose' : Math.abs(varPct) < 2 ? 'pine' : 'pine';
+                      return (
+                        <tr key={c.name} style={{ background: i % 2 === 0 ? ns.white : ns.ocean10,
+                          borderBottom: '1px solid ' + ns.ocean30 }}>
+                          <td style={{ padding: '0.75rem 1rem', fontWeight: 600, color: ns.ocean180 }}>{c.name}</td>
+                          <td style={{ padding: '0.75rem 1rem', color: ns.ocean150 }}>${c.budget.toFixed(1)}</td>
+                          <td style={{ padding: '0.75rem 1rem', color: ns.ocean150 }}>${c.actual.toFixed(1)}</td>
+                          <td style={{ padding: '0.75rem 1rem', fontWeight: 600,
+                            color: over ? ns.rose : ns.pine }}>
+                            {over ? '+' : ''}{varDollar.toFixed(1)}
+                          </td>
+                          <td style={{ padding: '0.75rem 1rem', fontWeight: 600,
+                            color: over ? ns.rose : ns.pine }}>
+                            {over ? '+' : ''}{varPct.toFixed(1)}%
+                          </td>
+                          <td style={{ padding: '0.75rem 1rem' }}>
+                            <Badge label={statusLabel} type={statusType} />
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                  <tfoot>
+                    <tr style={{ background: ns.ocean30, borderTop: '2px solid ' + ns.ocean120 }}>
+                      <td style={{ padding: '0.75rem 1rem', fontWeight: 700, color: ns.ocean180 }}>Total</td>
+                      <td style={{ padding: '0.75rem 1rem', fontWeight: 700, color: ns.ocean180 }}>$19.4</td>
+                      <td style={{ padding: '0.75rem 1rem', fontWeight: 700, color: ns.ocean180 }}>$18.5</td>
+                      <td style={{ padding: '0.75rem 1rem', fontWeight: 700, color: ns.pine }}>−0.9</td>
+                      <td style={{ padding: '0.75rem 1rem', fontWeight: 700, color: ns.pine }}>−4.6%</td>
+                      <td style={{ padding: '0.75rem 1rem' }}>
+                        <Badge label="Under Budget" type="pine" />
+                      </td>
+                    </tr>
+                  </tfoot>
+                </table>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Footer */}
+        <div style={{ marginTop: '2rem', paddingTop: '1rem', borderTop: '1px solid ' + ns.ocean30,
+          display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem' }}>
+          <span style={{ fontSize: '0.72rem', color: ns.ocean150 }}>
+            FY25 Inventory &amp; OpEx Optimization Dashboard — Demo Data Only
+          </span>
+          <span style={{ fontSize: '0.72rem', color: ns.ocean150 }}>
+            Last refreshed: {new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+          </span>
+        </div>
+
+      </div>
+    </div>
+  );
+};
+
+const root = ReactDOM.createRoot(document.getElementById('root'));
+root.render(<App />);
+</script>
+</body>
+</html>

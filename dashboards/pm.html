@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<script src="https://cdn.jsdelivr.net/npm/react@18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/react-dom@18.2.0/umd/react-dom.production.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@babel/standalone@7.23.2/babel.min.js"></script>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #F1EFED; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const { useState, useMemo, useEffect, useRef } = React;
+
+const ns = {
+  ocean120: '#36677D', ocean180: '#13212C', ocean150: '#264759',
+  ocean60: '#94BFCE', ocean30: '#E7F2F5', ocean10: '#F5FAFC',
+  pine: '#86B596', rose: '#FF8675', yellow: '#E2C06B',
+  neutral: '#F1EFED', white: '#FFFFFF'
+};
+
+const fmt = (v) => {
+  if (v >= 1000000) return '$' + (v/1000000).toFixed(1) + 'M';
+  if (v >= 1000) return '$' + (v/1000).toFixed(0) + 'K';
+  return '$' + v.toFixed(0);
+};
+
+const projects = [
+  { id: 1, projectId: 'PRJ1125', name: 'Managed Service Project', customer: 'Manufacturing Co.', manager: 'Sarah Chen', status: 'In Progress', service: 'Support', budget: 85000, actual: 62000, percentComplete: 73, actualHours: 0 },
+  { id: 2, projectId: 'PRJ1190', name: 'Platform Migration', customer: 'Manufacturing Co.', manager: 'Sarah Chen', status: 'In Progress', service: 'Implementation', budget: 124000, actual: 98000, percentComplete: 79, actualHours: 18 },
+  { id: 3, projectId: 'PRJ1197', name: 'Consulting Engagement', customer: 'DataSync', manager: 'Mark Rivera', status: 'Customer Review', service: 'Consulting', budget: 45000, actual: 41000, percentComplete: 91, actualHours: 12 },
+  { id: 4, projectId: 'PRJ1112', name: 'ERP Integration', customer: 'Vertex Technology', manager: 'Lisa Park', status: 'In Progress', service: 'Implementation', budget: 210000, actual: 178000, percentComplete: 85, actualHours: 0 },
+  { id: 5, projectId: 'PRJ1130', name: 'Proof of Concept', customer: 'Apex Software', manager: 'Mark Rivera', status: 'Not Started', service: 'Custom', budget: 35000, actual: 0, percentComplete: 0, actualHours: 0 },
+  { id: 6, projectId: 'PRJ1127', name: 'Customization Work', customer: 'Apex Software', manager: 'Sarah Chen', status: 'In Progress', service: 'Custom', budget: 68000, actual: 74000, percentComplete: 95, actualHours: 22 },
+  { id: 7, projectId: 'PRJ1126', name: 'System Management', customer: 'Vertex Technology', manager: 'Lisa Park', status: 'Completed', service: 'Support', budget: 52000, actual: 49000, percentComplete: 100, actualHours: 0 },
+  { id: 8, projectId: 'PRJ1124', name: 'System Admin Project', customer: 'Manufacturing Co.', manager: 'Lisa Park', status: 'In Progress', service: 'Support', budget: 38000, actual: 29000, percentComplete: 76, actualHours: 0 },
+  { id: 9, projectId: 'PRJ1196', name: 'Business Process Consulting', customer: 'Clearfield Group', manager: 'Mark Rivera', status: 'Customer Review', service: 'Consulting', budget: 78000, actual: 71000, percentComplete: 91, actualHours: 14 },
+  { id: 10, projectId: 'PRJ1111', name: 'Data Migration', customer: 'Summit Consulting', manager: 'Sarah Chen', status: 'In Progress', service: 'Implementation', budget: 95000, actual: 81000, percentComplete: 85, actualHours: 0 },
+  { id: 11, projectId: 'PRJ1191', name: 'CRM Implementation', customer: 'Vertex Technology', manager: 'Lisa Park', status: 'Not Started', service: 'Implementation', budget: 145000, actual: 8000, percentComplete: 5, actualHours: 0 },
+  { id: 12, projectId: 'PRJ1000', name: 'Platform Deployment', customer: 'Manufacturing Co.', manager: 'Mark Rivera', status: 'On Hold', service: 'Implementation', budget: 189000, actual: 42000, percentComplete: 22, actualHours: 0 },
+];
+
+const statusColors = {
+  'Not Started': ns.ocean120, 'In Progress': ns.ocean60,
+  'Customer Review': ns.yellow, 'Completed': ns.pine, 'On Hold': ns.rose
+};
+
+const getRec = (p) => {
+  const v = p.budget > 0 ? ((p.actual - p.budget) / p.budget) * 100 : 0;
+  if (p.status === 'Completed') return { label: 'COMPLETED', color: ns.pine };
+  if (v > 10) return { label: 'OVER BUDGET', color: ns.rose };
+  if (p.actualHours > 10) return { label: 'READY TO BILL', color: ns.pine };
+  if (v > 5) return { label: 'AT RISK', color: ns.yellow };
+  return { label: 'ON TRACK', color: ns.pine };
+};
+
+const card = { background: ns.white, borderRadius: '8px', padding: '1.5rem', boxShadow: '0 1px 3px rgba(19,33,44,0.1)', border: '1px solid ' + ns.ocean30 };
+
+const Badge = ({ label, color }) => (
+  <span style={{ background: color, color: color === ns.yellow ? ns.ocean180 : ns.white, padding: '0.18rem 0.5rem', borderRadius: '10px', fontSize: '0.6rem', fontWeight: 700, textTransform: 'uppercase', whiteSpace: 'nowrap' }}>{label}</span>
+);
+
+const BudgetChart = ({ projects }) => {
+  const ref = useRef(null);
+  const chartRef = useRef(null);
+  useEffect(() => {
+    if (chartRef.current) chartRef.current.destroy();
+    const top = projects.slice(0, 8);
+    chartRef.current = new Chart(ref.current.getContext('2d'), {
+      type: 'bar',
+      data: {
+        labels: top.map(p => p.projectId),
+        datasets: [
+          { label: 'Budget', data: top.map(p => p.budget), backgroundColor: ns.ocean60 },
+          { label: 'Actual', data: top.map(p => p.actual), backgroundColor: ns.rose },
+        ]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { position: 'bottom', labels: { font: { size: 10 }, boxWidth: 10 } } },
+        scales: {
+          x: { ticks: { font: { size: 10 } }, grid: { display: false } },
+          y: { ticks: { callback: v => '$' + (v/1000) + 'K', font: { size: 10 } }, grid: { color: '#f0f0f0' } }
+        }
+      }
+    });
+    return () => { if (chartRef.current) chartRef.current.destroy(); };
+  }, [projects.length]);
+  return <div style={{ height: 240 }}><canvas ref={ref} /></div>;
+};
+
+const StatusDonut = ({ projects }) => {
+  const ref = useRef(null);
+  const chartRef = useRef(null);
+  useEffect(() => {
+    if (chartRef.current) chartRef.current.destroy();
+    const statuses = ['In Progress', 'Not Started', 'Customer Review', 'Completed', 'On Hold'];
+    const counts = statuses.map(s => projects.filter(p => p.status === s).length);
+    chartRef.current = new Chart(ref.current.getContext('2d'), {
+      type: 'doughnut',
+      data: {
+        labels: statuses,
+        datasets: [{ data: counts, backgroundColor: statuses.map(s => statusColors[s]), borderWidth: 2, borderColor: '#fff' }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { position: 'bottom', labels: { font: { size: 10 }, boxWidth: 10 } } }
+      }
+    });
+    return () => { if (chartRef.current) chartRef.current.destroy(); };
+  }, [projects.length]);
+  return <div style={{ height: 220 }}><canvas ref={ref} /></div>;
+};
+
+const ProjectDashboard = () => {
+  const [view, setView] = useState('kanban');
+  const [filterMgr, setFilterMgr] = useState('all');
+  const [filterStatus, setFilterStatus] = useState('all');
+
+  const managers = useMemo(() => ['all', ...new Set(projects.map(p => p.manager))], []);
+  const statuses = ['all', 'Not Started', 'In Progress', 'Customer Review', 'Completed', 'On Hold'];
+
+  const filtered = useMemo(() => projects.filter(p => {
+    if (filterMgr !== 'all' && p.manager !== filterMgr) return false;
+    if (filterStatus !== 'all' && p.status !== filterStatus) return false;
+    return true;
+  }), [filterMgr, filterStatus]);
+
+  const metrics = useMemo(() => ({
+    total: filtered.length,
+    active: filtered.filter(p => p.status === 'In Progress').length,
+    completed: filtered.filter(p => p.status === 'Completed').length,
+    totalBudget: filtered.reduce((s, p) => s + p.budget, 0),
+    totalActual: filtered.reduce((s, p) => s + p.actual, 0),
+    avgComplete: filtered.length > 0 ? (filtered.reduce((s, p) => s + p.percentComplete, 0) / filtered.length).toFixed(0) : 0,
+  }), [filtered]);
+
+  const kanbanCols = [
+    { status: 'Not Started', color: ns.ocean120 },
+    { status: 'In Progress', color: ns.ocean60 },
+    { status: 'Customer Review', color: ns.yellow },
+    { status: 'Completed', color: ns.pine },
+    { status: 'On Hold', color: ns.rose },
+  ];
+
+  const sel = { width: '100%', padding: '0.45rem', border: '1px solid ' + ns.ocean30, borderRadius: '6px', fontSize: '0.82rem', background: ns.white, color: ns.ocean180 };
+
+  return (
+    <div style={{ background: ns.neutral, minHeight: '100vh' }}>
+      <div style={{ background: ns.ocean120, padding: '1.25rem 2rem', color: ns.white }}>
+        <h1 style={{ fontSize: '1.4rem', fontWeight: 600, margin: 0 }}>Project Management Dashboard</h1>
+        <p style={{ fontSize: '0.78rem', opacity: 0.85, margin: '0.2rem 0 0' }}>Demo Environment · Professional Services Operations</p>
+      </div>
+      <div style={{ padding: '1.5rem', maxWidth: '1800px', margin: '0 auto' }}>
+
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(150px,1fr))', gap: '1rem', marginBottom: '1.25rem' }}>
+          {[
+            { label: 'Total Projects', value: metrics.total, bg: ns.ocean120 },
+            { label: 'In Progress', value: metrics.active, bg: ns.ocean60 },
+            { label: 'Completed', value: metrics.completed, bg: ns.pine },
+            { label: 'Avg Completion', value: metrics.avgComplete + '%', bg: ns.yellow },
+          ].map((m, i) => (
+            <div key={i} style={{ background: m.bg, color: i===3 ? ns.ocean180 : ns.white, borderRadius: '8px', padding: '1.1rem', boxShadow: '0 1px 3px rgba(19,33,44,0.1)' }}>
+              <div style={{ fontSize: '0.76rem', opacity: 0.9, marginBottom: '0.3rem' }}>{m.label}</div>
+              <div style={{ fontSize: '1.7rem', fontWeight: 600 }}>{m.value}</div>
+            </div>
+          ))}
+        </div>
+
+        <div style={{ background: ns.white, border: '1px solid ' + ns.ocean30, borderRadius: '8px', padding: '0.9rem 1rem', marginBottom: '1.25rem', display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(150px,1fr))', gap: '0.75rem' }}>
+          <div>
+            <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 500, color: ns.ocean150, marginBottom: '0.3rem' }}>Manager</label>
+            <select value={filterMgr} onChange={e => setFilterMgr(e.target.value)} style={sel}>
+              {managers.map(m => <option key={m} value={m}>{m === 'all' ? 'All Managers' : m}</option>)}
+            </select>
+          </div>
+          <div>
+            <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 500, color: ns.ocean150, marginBottom: '0.3rem' }}>Status</label>
+            <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)} style={sel}>
+              {statuses.map(s => <option key={s} value={s}>{s === 'all' ? 'All Status' : s}</option>)}
+            </select>
+          </div>
+        </div>
+
+        <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1.25rem' }}>
+          {[['kanban','Kanban Board'],['profitability','Profitability'],['charts','Charts']].map(([id, label]) => (
+            <button key={id} onClick={() => setView(id)} style={{
+              background: view===id ? ns.ocean120 : ns.white, color: view===id ? ns.white : ns.ocean150,
+              border: '1px solid ' + ns.ocean30, borderRadius: '6px', padding: '0.5rem 1rem',
+              fontSize: '0.83rem', fontWeight: 500, cursor: 'pointer', fontFamily: 'inherit'
+            }}>{label}</button>
+          ))}
+        </div>
+
+        {view === 'kanban' && (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(260px,1fr))', gap: '1rem' }}>
+            {kanbanCols.map(col => (
+              <div key={col.status} style={{ ...card, minHeight: '280px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
+                  <div style={{ width: '9px', height: '9px', borderRadius: '50%', background: col.color }} />
+                  <h3 style={{ fontSize: '0.88rem', fontWeight: 600, color: ns.ocean180, flex: 1, margin: 0 }}>{col.status}</h3>
+                  <span style={{ fontSize: '0.78rem', color: ns.ocean150 }}>{filtered.filter(p => p.status === col.status).length}</span>
+                </div>
+                {filtered.filter(p => p.status === col.status).map(p => {
+                  const rec = getRec(p);
+                  const variance = p.budget > 0 ? ((p.actual - p.budget) / p.budget) * 100 : 0;
+                  return (
+                    <div key={p.id} style={{ background: ns.ocean10, borderRadius: '6px', padding: '0.85rem', border: '1px solid ' + ns.ocean30, marginBottom: '0.65rem' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.3rem' }}>
+                        <span style={{ fontSize: '0.75rem', fontWeight: 600, color: ns.ocean150 }}>{p.projectId}</span>
+                        <Badge label={rec.label} color={rec.color} />
+                      </div>
+                      <div style={{ fontSize: '0.83rem', fontWeight: 500, color: ns.ocean180, marginBottom: '0.2rem' }}>{p.name}</div>
+                      <div style={{ fontSize: '0.7rem', color: ns.ocean150, marginBottom: '0.55rem' }}>{p.service} · {p.customer}</div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.7rem', color: ns.ocean150, marginBottom: '0.2rem' }}>
+                        <span>Progress</span><span style={{ fontWeight: 600 }}>{p.percentComplete}%</span>
+                      </div>
+                      <div style={{ height: '5px', background: ns.ocean30, borderRadius: '3px', marginBottom: '0.5rem' }}>
+                        <div style={{ width: p.percentComplete + '%', height: '100%', borderRadius: '3px', background: p.percentComplete >= 80 ? ns.pine : p.percentComplete >= 50 ? ns.yellow : ns.rose }} />
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.7rem', color: ns.ocean150 }}>
+                        <span>Budget</span>
+                        <span style={{ fontWeight: 600, color: variance > 10 ? ns.rose : ns.pine }}>{fmt(p.actual)} / {fmt(p.budget)}</span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            ))}
+          </div>
+        )}
+
+        {view === 'profitability' && (
+          <>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(160px,1fr))', gap: '1rem', marginBottom: '1.25rem' }}>
+              {[
+                { label: 'Total Budget', value: fmt(metrics.totalBudget), bg: ns.ocean120 },
+                { label: 'Total Costs', value: fmt(metrics.totalActual), bg: ns.rose },
+                { label: 'Gross Profit', value: fmt(metrics.totalBudget - metrics.totalActual), bg: ns.pine },
+                { label: 'Margin', value: metrics.totalBudget > 0 ? (((metrics.totalBudget - metrics.totalActual) / metrics.totalBudget) * 100).toFixed(1) + '%' : '0%', bg: ns.yellow },
+              ].map((m, i) => (
+                <div key={i} style={{ background: m.bg, color: i===3 ? ns.ocean180 : ns.white, borderRadius: '8px', padding: '1.1rem' }}>
+                  <div style={{ fontSize: '0.76rem', opacity: 0.9, marginBottom: '0.3rem' }}>{m.label}</div>
+                  <div style={{ fontSize: '1.5rem', fontWeight: 600 }}>{m.value}</div>
+                </div>
+              ))}
+            </div>
+            <div style={card}>
+              <h3 style={{ fontSize: '1rem', fontWeight: 600, color: ns.ocean180, marginBottom: '1rem' }}>Project Profitability</h3>
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.83rem' }}>
+                <thead>
+                  <tr style={{ background: ns.ocean10 }}>
+                    {['Project', 'Customer', 'Service', 'Budget', 'Actual', 'Profit', 'Margin'].map(h => (
+                      <th key={h} style={{ padding: '0.7rem', textAlign: 'left', fontWeight: 600, color: ns.ocean150 }}>{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {filtered.map((p, i) => {
+                    const profit = p.budget - p.actual;
+                    const margin = p.budget > 0 ? (profit / p.budget) * 100 : 0;
+                    return (
+                      <tr key={i} style={{ background: i%2===0 ? ns.white : ns.ocean10, borderBottom: '1px solid ' + ns.ocean30 }}>
+                        <td style={{ padding: '0.7rem', color: ns.ocean120, fontWeight: 500 }}>{p.projectId}</td>
+                        <td style={{ padding: '0.7rem', color: ns.ocean150 }}>{p.customer}</td>
+                        <td style={{ padding: '0.7rem', color: ns.ocean150 }}>{p.service}</td>
+                        <td style={{ padding: '0.7rem', color: ns.ocean150 }}>{fmt(p.budget)}</td>
+                        <td style={{ padding: '0.7rem', color: ns.ocean150 }}>{fmt(p.actual)}</td>
+                        <td style={{ padding: '0.7rem', fontWeight: 600, color: profit >= 0 ? ns.pine : ns.rose }}>{fmt(profit)}</td>
+                        <td style={{ padding: '0.7rem', fontWeight: 600, color: margin >= 30 ? ns.pine : margin >= 15 ? ns.yellow : ns.rose }}>{margin.toFixed(1)}%</td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </>
+        )}
+
+        {view === 'charts' && (
+          <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr', gap: '1.5rem' }}>
+            <div style={card}>
+              <h3 style={{ fontSize: '1rem', fontWeight: 600, color: ns.ocean180, marginBottom: '1rem' }}>Budget vs Actual by Project</h3>
+              <BudgetChart projects={filtered} />
+            </div>
+            <div style={card}>
+              <h3 style={{ fontSize: '1rem', fontWeight: 600, color: ns.ocean180, marginBottom: '1rem' }}>Status Distribution</h3>
+              <StatusDonut projects={filtered} />
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+ReactDOM.render(<ProjectDashboard />, document.getElementById('root'));
+</script>
+</body>
+</html>

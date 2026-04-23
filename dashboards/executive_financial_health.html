@@ -1,0 +1,1301 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Executive Financial Health Dashboard</title>
+  <script src="https://cdn.jsdelivr.net/npm/react@18.2.0/umd/react.production.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/react-dom@18.2.0/umd/react-dom.production.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/prop-types@15.8.1/prop-types.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/recharts@2.12.0/umd/Recharts.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@babel/standalone@7.23.2/babel.min.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif; background: #F5FAFC; }
+    #root { min-height: 100vh; }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+  <script type="text/babel">
+    const {
+      BarChart, Bar, LineChart, Line, PieChart, Pie, Cell,
+      XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer
+    } = Recharts;
+
+    const { useState } = React;
+
+
+const FinancialDashboard = () => {
+const [activeView, setActiveView] = useState('overview');
+
+const ns = {
+lightBlue: '#F5FAFC',
+darkBlue: '#194058',
+white: '#FFFFFF',
+ocean180: '#13212C',
+ocean150: '#264759',
+ocean120: '#36677D',
+ocean60: '#94BFCE',
+ocean30: '#E7F2F5',
+ocean10: '#F5FAFC',
+mint: '#86D4C0',
+lavender: '#A89BC9',
+peach: '#FFB199',
+coral: '#FF8675',
+sunlight: '#FFD580',
+rust: '#9E621A',
+teal: '#1A789B',
+green: '#426D2A'
+};
+
+const cardFrame = {
+padding: '6px',
+borderRadius: '13px',
+background: 'conic-gradient(from 52deg at 50.81% 52.69%, #975d6b 0deg, #d4976c 36.34deg, #ffa5a5 72.69deg, #997faa 109deg, #376980 264.8deg, #975d6b 360deg)',
+display: 'flex',
+marginBottom: '1.5rem',
+boxShadow: '0px 6px 12px 0px rgba(0, 0, 0, 0.15)'
+};
+
+const cardInner = {
+background: ns.white,
+borderRadius: '7px',
+padding: '1.5rem',
+border: `1px solid ${ns.ocean30}`,
+boxShadow: '0 2px 6px rgba(0, 0, 0, 0.06)',
+flex: 1
+};
+
+const metricCard = (bgColor, textColor = ns.white) => ({
+background: bgColor,
+color: textColor,
+borderRadius: '12px',
+padding: '1.5rem',
+textAlign: 'center',
+boxShadow: '0 2px 8px rgba(19, 33, 44, 0.08)'
+});
+
+// P&L Data by Subsidiary (Nov 2024 - Nov 2025)
+const plData = {
+'Germany': { revenue: 9584261, cogs: 2802323.55, expense: 1821462.90 },
+'US West': { revenue: 10245475, cogs: 4296620.48, expense: 2878251.64 },
+'United Kingdom': { revenue: 7742930, cogs: 3326981.71, expense: 2043055.52 },
+'US East': { revenue: 0, cogs: 0, expense: 2700 },
+'Parent Company': { revenue: 0, cogs: 0, expense: 10000 }
+};
+
+const totalRevenue = Object.values(plData).reduce((sum, s) => sum + s.revenue, 0);
+const totalCOGS = Object.values(plData).reduce((sum, s) => sum + s.cogs, 0);
+const totalExpenses = Object.values(plData).reduce((sum, s) => sum + s.expense, 0);
+const grossProfit = totalRevenue - totalCOGS;
+const netIncome = totalRevenue - totalCOGS - totalExpenses;
+const grossMargin = (grossProfit / totalRevenue) * 100;
+const netMargin = (netIncome / totalRevenue) * 100;
+
+// Liquidity Data
+const arData = {
+total: 36968025.82,
+current: 3579015.02,
+days_1_30: 4638543.14,
+days_31_60: 5776590.36,
+days_over_60: 22834869.97
+};
+
+const apData = {
+total: 17514151.67,
+not_yet_due: 1839205.57,
+days_1_30: 1722646.75,
+days_31_60: 1410543.30,
+days_over_60: 12541756.05
+};
+
+const cashBalance = 7647768.89; // Current cumulative cash
+
+// Balance Sheet Summary (as of Nov 12, 2025)
+const balanceSheet = {
+currentAssets: {
+cash: 24437231.88,  // Sum of all bank accounts + undeposited
+ar: 203850.40,
+inventory: 440128,
+other: 61569
+},
+currentLiabilities: {
+ap: 2447920,
+other: 670478.50
+}
+};
+
+const totalCurrentAssets = Object.values(balanceSheet.currentAssets).reduce((sum, v) => sum + v, 0);
+const totalCurrentLiabilities = Object.values(balanceSheet.currentLiabilities).reduce((sum, v) => sum + v, 0);
+const currentRatio = totalCurrentAssets / totalCurrentLiabilities;
+const quickRatio = (balanceSheet.currentAssets.cash + balanceSheet.currentAssets.ar) / totalCurrentLiabilities;
+
+// DSO & DPO Calculations
+const dso = (arData.total / totalRevenue) * 365;
+const dpo = (apData.total / totalCOGS) * 365;
+
+// Monthly Trends (Last 13 months consolidated)
+const monthlyTrends = [
+{ month: '2024-11', revenue: 1638209, cogs: 737141.68, expenses: 452300.82, netIncome: 448766.50 },
+{ month: '2024-12', revenue: 1659063, cogs: 737431.68, expenses: 433886.82, netIncome: 487744.50 },
+{ month: '2025-01', revenue: 1678917, cogs: 737721.68, expenses: 444425.82, netIncome: 496769.50 },
+{ month: '2025-02', revenue: 1698771, cogs: 738011.68, expenses: 447516.82, netIncome: 513242.50 },
+{ month: '2025-03', revenue: 1719135, cogs: 738301.68, expenses: 453631.82, netIncome: 527201.50 },
+{ month: '2025-04', revenue: 1762054, cogs: 738591.68, expenses: 464687.92, netIncome: 558774.40 },
+{ month: '2025-05', revenue: 1789008, cogs: 738881.68, expenses: 468170.12, netIncome: 581956.20 },
+{ month: '2025-06', revenue: 1810862, cogs: 739171.68, expenses: 474985.12, netIncome: 596705.20 },
+{ month: '2025-07', revenue: 1989289, cogs: 889875.08, expenses: 481800.12, netIncome: 617613.80 },
+{ month: '2025-08', revenue: 2743854, cogs: 1034128.18, expenses: 489570.94, netIncome: 1220155.88 },
+{ month: '2025-09', revenue: 3033713, cogs: 1030221.68, expenses: 600580.50, netIncome: 1402910.82 },
+{ month: '2025-10', revenue: 2953289, cogs: 810171.68, expenses: 808310.23, netIncome: 1334807.09 },
+{ month: '2025-11', revenue: 3075502, cogs: 756275.68, expenses: 734904.01, netIncome: 1584322.31 }
+];
+
+// Subsidiary Performance
+const subsidiaryData = Object.entries(plData).map(([name, data]) => ({
+subsidiary: name,
+revenue: data.revenue,
+cogs: data.cogs,
+expenses: data.expense,
+grossProfit: data.revenue - data.cogs,
+netIncome: data.revenue - data.cogs - data.expense,
+grossMargin: ((data.revenue - data.cogs) / data.revenue) * 100,
+netMargin: ((data.revenue - data.cogs - data.expense) / data.revenue) * 100
+})).filter(s => s.revenue > 0).sort((a, b) => b.netIncome - a.netIncome);
+
+// Cash Flow Monthly
+const cashFlowData = [
+{ month: '2024-11', flow: -571288.29, cumulative: -571288.29 },
+{ month: '2024-12', flow: -596423.11, cumulative: -1167711.40 },
+{ month: '2025-01', flow: -572275.92, cumulative: -1739987.32 },
+{ month: '2025-02', flow: 6618498.60, cumulative: 4878511.28 },
+{ month: '2025-03', flow: -573263.54, cumulative: 4305247.74 },
+{ month: '2025-04', flow: -573757.36, cumulative: 3731490.38 },
+{ month: '2025-05', flow: -574251.17, cumulative: 3157239.21 },
+{ month: '2025-06', flow: -68744.98, cumulative: 3088494.23 },
+{ month: '2025-07', flow: 2081955.27, cumulative: 5170449.50 },
+{ month: '2025-08', flow: -501619.54, cumulative: 4668829.96 },
+{ month: '2025-09', flow: 1776441.91, cumulative: 6445271.87 },
+{ month: '2025-10', flow: 804783.63, cumulative: 7250055.50 },
+{ month: '2025-11', flow: 397713.39, cumulative: 7647768.89 }
+];
+
+// AR Aging
+const arAging = [
+{ category: 'Current', amount: 3579015.02, pct: 9.7 },
+{ category: '1-30 Days', amount: 4638543.14, pct: 12.5 },
+{ category: '31-60 Days', amount: 5776590.36, pct: 15.6 },
+{ category: '60+ Days', amount: 22834869.97, pct: 61.8 }
+];
+
+// Monthly burn & runway calculation
+const avgMonthlyExpenses = totalExpenses / 13;
+const burnRate = avgMonthlyExpenses;
+const runway = cashBalance / burnRate;
+
+const chartColors = [ns.ocean120, ns.mint, ns.lavender, ns.peach, ns.coral, ns.sunlight];
+const tooltipStyle = {
+background: ns.white,
+border: `1px solid ${ns.ocean30}`,
+borderRadius: '6px',
+color: ns.ocean180,
+boxShadow: '0 2px 6px rgba(0, 0, 0, 0.06)'
+};
+
+const formatCurrency = (val) => {
+if (Math.abs(val) >= 1000000) return `$${(val / 1000000).toFixed(1)}M`;
+if (Math.abs(val) >= 1000) return `$${(val / 1000).toFixed(0)}K`;
+return `$${val.toFixed(0)}`;
+};
+
+const btnStyle = (active) => ({
+background: active ? ns.ocean120 : ns.white,
+color: active ? ns.white : ns.ocean120,
+border: `1px solid ${ns.ocean120}`,
+borderRadius: '8px',
+padding: '0.5rem 1rem',
+fontSize: '0.875rem',
+fontWeight: 500,
+cursor: 'pointer',
+fontFamily: 'inherit',
+marginRight: '0.5rem'
+});
+
+return (
+<div style={{
+fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif',
+minHeight: '100vh'
+}}>
+
+  {/* HEADER SECTION - Light Blue */}
+  <section style={{ background: ns.lightBlue, padding: '3rem 2rem' }}>
+    <div style={{ maxWidth: '1400px', margin: '0 auto' }}>
+      <h1 style={{ color: ns.ocean180, fontSize: '2.25rem', fontWeight: 600, marginBottom: '0.5rem' }}>
+        Executive Financial Health Dashboard
+      </h1>
+      <p style={{ color: ns.ocean150, fontSize: '1rem', marginBottom: '2rem' }}>
+        Comprehensive Financial Analysis | Nov 2024 - Nov 2025 YTD
+      </p>
+      
+      {/* Navigation */}
+      <div style={{ marginBottom: '2rem' }}>
+        <button onClick={() => setActiveView('overview')} style={btnStyle(activeView === 'overview')}>
+          Overview
+        </button>
+        <button onClick={() => setActiveView('subsidiary')} style={btnStyle(activeView === 'subsidiary')}>
+          Subsidiary Analysis
+        </button>
+        <button onClick={() => setActiveView('liquidity')} style={btnStyle(activeView === 'liquidity')}>
+          Cash &amp; Liquidity
+        </button>
+        <button onClick={() => setActiveView('profitability')} style={btnStyle(activeView === 'profitability')}>
+          Profitability
+        </button>
+      </div>
+      
+      {/* Executive KPIs */}
+      <div style={{
+        display: 'grid',
+        gap: '1.5rem',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+        marginBottom: '2rem'
+      }}>
+        <div style={metricCard(ns.ocean120)}>
+          <div style={{ fontSize: '0.875rem', marginBottom: '0.5rem', opacity: 0.9 }}>Total Revenue</div>
+          <div style={{ fontSize: '2rem', fontWeight: 600 }}>{formatCurrency(totalRevenue)}</div>
+          <div style={{ fontSize: '0.75rem', opacity: 0.8, marginTop: '0.25rem' }}>13-Month Period</div>
+        </div>
+        
+        <div style={metricCard(ns.mint)}>
+          <div style={{ fontSize: '0.875rem', marginBottom: '0.5rem', opacity: 0.9 }}>Gross Profit</div>
+          <div style={{ fontSize: '2rem', fontWeight: 600 }}>{formatCurrency(grossProfit)}</div>
+          <div style={{ fontSize: '0.75rem', opacity: 0.8, marginTop: '0.25rem' }}>{grossMargin.toFixed(1)}% Margin</div>
+        </div>
+        
+        <div style={metricCard(ns.lavender)}>
+          <div style={{ fontSize: '0.875rem', marginBottom: '0.5rem', opacity: 0.9 }}>Net Income</div>
+          <div style={{ fontSize: '2rem', fontWeight: 600 }}>{formatCurrency(netIncome)}</div>
+          <div style={{ fontSize: '0.75rem', opacity: 0.8, marginTop: '0.25rem' }}>{netMargin.toFixed(1)}% Margin</div>
+        </div>
+        
+        <div style={metricCard(ns.peach)}>
+          <div style={{ fontSize: '0.875rem', marginBottom: '0.5rem', opacity: 0.9 }}>Cash Position</div>
+          <div style={{ fontSize: '2rem', fontWeight: 600 }}>{formatCurrency(cashBalance)}</div>
+          <div style={{ fontSize: '0.75rem', opacity: 0.8, marginTop: '0.25rem' }}>{runway.toFixed(1)} Months Runway</div>
+        </div>
+        
+        <div style={metricCard(currentRatio >= 2 ? ns.mint : currentRatio >= 1 ? ns.sunlight : ns.coral)}>
+          <div style={{ fontSize: '0.875rem', marginBottom: '0.5rem', opacity: 0.9 }}>Current Ratio</div>
+          <div style={{ fontSize: '2rem', fontWeight: 600 }}>{currentRatio.toFixed(2)}</div>
+          <div style={{ fontSize: '0.75rem', opacity: 0.8, marginTop: '0.25rem' }}>
+            {currentRatio >= 2 ? 'STRONG' : currentRatio >= 1 ? 'ADEQUATE' : 'RISK'}
+          </div>
+        </div>
+        
+        <div style={metricCard(dso <= 45 ? ns.mint : dso <= 60 ? ns.sunlight : ns.coral)}>
+          <div style={{ fontSize: '0.875rem', marginBottom: '0.5rem', opacity: 0.9 }}>Days Sales Outstanding</div>
+          <div style={{ fontSize: '2rem', fontWeight: 600 }}>{dso.toFixed(0)}</div>
+          <div style={{ fontSize: '0.75rem', opacity: 0.8, marginTop: '0.25rem' }}>
+            {dso <= 45 ? 'EXCELLENT' : dso <= 60 ? 'ACCEPTABLE' : 'ATTENTION NEEDED'}
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+  
+  {/* OVERVIEW VIEW */}
+  {activeView === 'overview' && (
+    <section style={{ background: ns.darkBlue, padding: '3rem 2rem' }}>
+      <div style={{ maxWidth: '1400px', margin: '0 auto' }}>
+        
+        {/* Summary Stats */}
+        <div style={{ display: 'flex', gap: '1rem', marginBottom: '2rem' }}>
+          <div style={{
+            flex: 1,
+            background: ns.rust,
+            color: ns.white,
+            padding: '0.75rem 1rem',
+            borderRadius: '4px',
+            fontSize: '0.875rem',
+            fontWeight: 500
+          }}>
+            CRITICAL: $22.8M in AR >60 days overdue (61.8% of total receivables)
+          </div>
+          <div style={{
+            flex: 1,
+            background: ns.teal,
+            color: ns.white,
+            padding: '0.75rem 1rem',
+            borderRadius: '4px',
+            fontSize: '0.875rem',
+            fontWeight: 500
+          }}>
+            Strong Revenue Growth: +32% Feb spike, sustained through Q3-Q4
+          </div>
+        </div>
+        
+        <h2 style={{ color: ns.white, fontSize: '1.5rem', fontWeight: 600, marginBottom: '1.5rem' }}>
+          Financial Performance Trends
+        </h2>
+        
+        {/* Revenue & Profitability Trend */}
+        <div style={cardFrame}>
+          <div style={cardInner}>
+            <h3 style={{ color: ns.ocean180, fontSize: '1.125rem', fontWeight: 600, marginBottom: '1rem' }}>
+              Monthly Revenue &amp; Net Income Trend
+            </h3>
+            <ResponsiveContainer width="100%" height={300}>
+              <LineChart data={monthlyTrends}>
+                <CartesianGrid strokeDasharray="3 3" stroke={ns.ocean30} />
+                <XAxis dataKey="month" stroke={ns.ocean150} />
+                <YAxis stroke={ns.ocean150} tickFormatter={formatCurrency} />
+                <Tooltip contentStyle={tooltipStyle} formatter={(val) => formatCurrency(val)} />
+                <Legend />
+                <Line type="monotone" dataKey="revenue" stroke={ns.ocean120} strokeWidth={2} name="Revenue" />
+                <Line type="monotone" dataKey="netIncome" stroke={ns.mint} strokeWidth={2} name="Net Income" />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+        
+        {/* Two-Column Grid */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
+          
+          {/* Revenue by Subsidiary */}
+          <div style={cardFrame}>
+            <div style={cardInner}>
+              <h3 style={{ color: ns.ocean180, fontSize: '1.125rem', fontWeight: 600, marginBottom: '1rem' }}>
+                Revenue Distribution
+              </h3>
+              <ResponsiveContainer width="100%" height={250}>
+                <PieChart>
+                  <Pie
+                    data={subsidiaryData}
+                    cx="50%"
+                    cy="50%"
+                    outerRadius={80}
+                    dataKey="revenue"
+                    nameKey="subsidiary"
+                    label={(entry) => `${((entry.revenue / totalRevenue) * 100).toFixed(1)}%`}
+                  >
+                    {subsidiaryData.map((entry, index) => (
+                      <Cell key={index} fill={chartColors[index % chartColors.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip contentStyle={tooltipStyle} formatter={(val) => formatCurrency(val)} />
+                  <Legend />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+          
+          {/* Margin Performance */}
+          <div style={cardFrame}>
+            <div style={cardInner}>
+              <h3 style={{ color: ns.ocean180, fontSize: '1.125rem', fontWeight: 600, marginBottom: '1rem' }}>
+                Margin Performance by Subsidiary
+              </h3>
+              <ResponsiveContainer width="100%" height={250}>
+                <BarChart data={subsidiaryData}>
+                  <CartesianGrid strokeDasharray="3 3" stroke={ns.ocean30} />
+                  <XAxis dataKey="subsidiary" stroke={ns.ocean150} />
+                  <YAxis stroke={ns.ocean150} tickFormatter={(v) => `${v}%`} />
+                  <Tooltip contentStyle={tooltipStyle} formatter={(val) => `${val.toFixed(1)}%`} />
+                  <Legend />
+                  <Bar dataKey="grossMargin" fill={ns.ocean120} name="Gross Margin %" />
+                  <Bar dataKey="netMargin" fill={ns.mint} name="Net Margin %" />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+        </div>
+        
+      </div>
+    </section>
+  )}
+  
+  {/* SUBSIDIARY VIEW */}
+  {activeView === 'subsidiary' && (
+    <section style={{ background: ns.lightBlue, padding: '3rem 2rem' }}>
+      <div style={{ maxWidth: '1400px', margin: '0 auto' }}>
+        <h2 style={{ color: ns.ocean180, fontSize: '1.5rem', fontWeight: 600, marginBottom: '1.5rem' }}>
+          Subsidiary Performance Analysis
+        </h2>
+        
+        <div style={cardFrame}>
+          <div style={cardInner}>
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <thead>
+                <tr style={{ background: ns.ocean10 }}>
+                  <th style={{
+                    padding: '1rem',
+                    textAlign: 'left',
+                    fontWeight: 600,
+                    color: ns.ocean150,
+                    borderBottom: `1px solid ${ns.ocean30}`,
+                    fontSize: '0.875rem'
+                  }}>Subsidiary</th>
+                  <th style={{
+                    padding: '1rem',
+                    textAlign: 'right',
+                    fontWeight: 600,
+                    color: ns.ocean150,
+                    borderBottom: `1px solid ${ns.ocean30}`,
+                    fontSize: '0.875rem'
+                  }}>Revenue</th>
+                  <th style={{
+                    padding: '1rem',
+                    textAlign: 'right',
+                    fontWeight: 600,
+                    color: ns.ocean150,
+                    borderBottom: `1px solid ${ns.ocean30}`,
+                    fontSize: '0.875rem'
+                  }}>COGS</th>
+                  <th style={{
+                    padding: '1rem',
+                    textAlign: 'right',
+                    fontWeight: 600,
+                    color: ns.ocean150,
+                    borderBottom: `1px solid ${ns.ocean30}`,
+                    fontSize: '0.875rem'
+                  }}>Gross Profit</th>
+                  <th style={{
+                    padding: '1rem',
+                    textAlign: 'right',
+                    fontWeight: 600,
+                    color: ns.ocean150,
+                    borderBottom: `1px solid ${ns.ocean30}`,
+                    fontSize: '0.875rem'
+                  }}>Gross Margin %</th>
+                  <th style={{
+                    padding: '1rem',
+                    textAlign: 'right',
+                    fontWeight: 600,
+                    color: ns.ocean150,
+                    borderBottom: `1px solid ${ns.ocean30}`,
+                    fontSize: '0.875rem'
+                  }}>Expenses</th>
+                  <th style={{
+                    padding: '1rem',
+                    textAlign: 'right',
+                    fontWeight: 600,
+                    color: ns.ocean150,
+                    borderBottom: `1px solid ${ns.ocean30}`,
+                    fontSize: '0.875rem'
+                  }}>Net Income</th>
+                  <th style={{
+                    padding: '1rem',
+                    textAlign: 'right',
+                    fontWeight: 600,
+                    color: ns.ocean150,
+                    borderBottom: `1px solid ${ns.ocean30}`,
+                    fontSize: '0.875rem'
+                  }}>Net Margin %</th>
+                </tr>
+              </thead>
+              <tbody>
+                {subsidiaryData.map((row, idx) => (
+                  <tr key={idx} style={{
+                    background: idx % 2 === 0 ? ns.white : ns.ocean10,
+                    borderBottom: `1px solid ${ns.ocean30}`
+                  }}>
+                    <td style={{ padding: '1rem', color: ns.ocean180, fontSize: '0.875rem', fontWeight: 600 }}>
+                      {row.subsidiary}
+                    </td>
+                    <td style={{ padding: '1rem', textAlign: 'right', color: ns.ocean150, fontSize: '0.875rem' }}>
+                      {formatCurrency(row.revenue)}
+                    </td>
+                    <td style={{ padding: '1rem', textAlign: 'right', color: ns.coral, fontSize: '0.875rem' }}>
+                      {formatCurrency(row.cogs)}
+                    </td>
+                    <td style={{ padding: '1rem', textAlign: 'right', color: ns.mint, fontSize: '0.875rem', fontWeight: 600 }}>
+                      {formatCurrency(row.grossProfit)}
+                    </td>
+                    <td style={{ padding: '1rem', textAlign: 'right', color: ns.ocean150, fontSize: '0.875rem' }}>
+                      {row.grossMargin.toFixed(1)}%
+                    </td>
+                    <td style={{ padding: '1rem', textAlign: 'right', color: ns.coral, fontSize: '0.875rem' }}>
+                      {formatCurrency(row.expenses)}
+                    </td>
+                    <td style={{ padding: '1rem', textAlign: 'right', color: row.netIncome >= 0 ? ns.mint : ns.coral, fontSize: '0.875rem', fontWeight: 600 }}>
+                      {formatCurrency(row.netIncome)}
+                    </td>
+                    <td style={{ padding: '1rem', textAlign: 'right', color: ns.ocean150, fontSize: '0.875rem' }}>
+                      {row.netMargin.toFixed(1)}%
+                    </td>
+                  </tr>
+                ))}
+                <tr style={{ background: ns.ocean120, borderTop: `2px solid ${ns.ocean120}` }}>
+                  <td style={{ padding: '1rem', color: ns.white, fontSize: '0.875rem', fontWeight: 600 }}>
+                    TOTAL
+                  </td>
+                  <td style={{ padding: '1rem', textAlign: 'right', color: ns.white, fontSize: '0.875rem', fontWeight: 600 }}>
+                    {formatCurrency(totalRevenue)}
+                  </td>
+                  <td style={{ padding: '1rem', textAlign: 'right', color: ns.white, fontSize: '0.875rem', fontWeight: 600 }}>
+                    {formatCurrency(totalCOGS)}
+                  </td>
+                  <td style={{ padding: '1rem', textAlign: 'right', color: ns.white, fontSize: '0.875rem', fontWeight: 600 }}>
+                    {formatCurrency(grossProfit)}
+                  </td>
+                  <td style={{ padding: '1rem', textAlign: 'right', color: ns.white, fontSize: '0.875rem', fontWeight: 600 }}>
+                    {grossMargin.toFixed(1)}%
+                  </td>
+                  <td style={{ padding: '1rem', textAlign: 'right', color: ns.white, fontSize: '0.875rem', fontWeight: 600 }}>
+                    {formatCurrency(totalExpenses)}
+                  </td>
+                  <td style={{ padding: '1rem', textAlign: 'right', color: ns.white, fontSize: '0.875rem', fontWeight: 600 }}>
+                    {formatCurrency(netIncome)}
+                  </td>
+                  <td style={{ padding: '1rem', textAlign: 'right', color: ns.white, fontSize: '0.875rem', fontWeight: 600 }}>
+                    {netMargin.toFixed(1)}%
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        
+        <div style={cardFrame}>
+          <div style={cardInner}>
+            <h3 style={{ color: ns.ocean180, fontSize: '1.125rem', fontWeight: 600, marginBottom: '1rem' }}>
+              Subsidiary Contribution to Net Income
+            </h3>
+            <ResponsiveContainer width="100%" height={300}>
+              <BarChart data={subsidiaryData}>
+                <CartesianGrid strokeDasharray="3 3" stroke={ns.ocean30} />
+                <XAxis dataKey="subsidiary" stroke={ns.ocean150} />
+                <YAxis stroke={ns.ocean150} tickFormatter={formatCurrency} />
+                <Tooltip contentStyle={tooltipStyle} formatter={(val) => formatCurrency(val)} />
+                <Legend />
+                <Bar dataKey="revenue" fill={ns.ocean120} name="Revenue" />
+                <Bar dataKey="grossProfit" fill={ns.mint} name="Gross Profit" />
+                <Bar dataKey="netIncome" fill={ns.lavender} name="Net Income" />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+        
+      </div>
+    </section>
+  )}
+  
+  {/* LIQUIDITY VIEW */}
+  {activeView === 'liquidity' && (
+    <section style={{ background: ns.lightBlue, padding: '3rem 2rem' }}>
+      <div style={{ maxWidth: '1400px', margin: '0 auto' }}>
+        <h2 style={{ color: ns.ocean180, fontSize: '1.5rem', fontWeight: 600, marginBottom: '1.5rem' }}>
+          Cash Flow &amp; Working Capital
+        </h2>
+        
+        {/* Cash Flow Trend */}
+        <div style={cardFrame}>
+          <div style={cardInner}>
+            <h3 style={{ color: ns.ocean180, fontSize: '1.125rem', fontWeight: 600, marginBottom: '1rem' }}>
+              Cumulative Cash Position
+            </h3>
+            <ResponsiveContainer width="100%" height={300}>
+              <LineChart data={cashFlowData}>
+                <CartesianGrid strokeDasharray="3 3" stroke={ns.ocean30} />
+                <XAxis dataKey="month" stroke={ns.ocean150} />
+                <YAxis stroke={ns.ocean150} tickFormatter={formatCurrency} />
+                <Tooltip contentStyle={tooltipStyle} formatter={(val) => formatCurrency(val)} />
+                <Legend />
+                <Line type="monotone" dataKey="cumulative" stroke={ns.ocean120} strokeWidth={3} name="Cash Balance" />
+                <Line type="monotone" dataKey="flow" stroke={ns.mint} strokeWidth={2} name="Monthly Flow" />
+              </LineChart>
+            </ResponsiveContainer>
+            <div style={{ marginTop: '1rem', color: ns.ocean150, fontSize: '0.875rem' }}>
+              <strong>Key Insight:</strong> February 2025 shows major cash injection (+$6.6M), followed by steady burn until July revenue spike.
+            </div>
+          </div>
+        </div>
+        
+        {/* AR Aging Analysis */}
+        <div style={cardFrame}>
+          <div style={cardInner}>
+            <h3 style={{ color: ns.ocean180, fontSize: '1.125rem', fontWeight: 600, marginBottom: '1rem' }}>
+              Accounts Receivable Aging - IMMEDIATE ATTENTION REQUIRED
+            </h3>
+            <ResponsiveContainer width="100%" height={250}>
+              <BarChart data={arAging}>
+                <CartesianGrid strokeDasharray="3 3" stroke={ns.ocean30} />
+                <XAxis dataKey="category" stroke={ns.ocean150} />
+                <YAxis stroke={ns.ocean150} tickFormatter={formatCurrency} />
+                <Tooltip contentStyle={tooltipStyle} formatter={(val) => formatCurrency(val)} />
+                <Bar dataKey="amount" name="AR Amount">
+                  {arAging.map((entry, index) => (
+                    <Cell key={index} fill={index === 3 ? ns.coral : index === 2 ? ns.sunlight : ns.mint} />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+            <div style={{ marginTop: '1rem', padding: '1rem', background: '#FFF5F5', borderLeft: `4px solid ${ns.coral}`, borderRadius: '4px' }}>
+              <div style={{ color: ns.coral, fontWeight: 600, marginBottom: '0.5rem' }}>🚨 CRITICAL COLLECTION RISK</div>
+              <div style={{ color: ns.ocean150, fontSize: '0.875rem' }}>
+                <strong>$22.8M (61.8%)</strong> of receivables are 60+ days overdue. This represents 305 days of revenue tied up in old AR.
+                Average DSO of 489 days is severely impacting cash flow and working capital.
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        {/* Working Capital Metrics */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1.5rem' }}>
+          <div style={cardFrame}>
+            <div style={cardInner}>
+              <h4 style={{ color: ns.ocean150, fontSize: '0.875rem', marginBottom: '0.5rem', fontWeight: 600 }}>
+                Current Assets
+              </h4>
+              <div style={{ fontSize: '1.5rem', fontWeight: 600, color: ns.ocean180, marginBottom: '0.5rem' }}>
+                {formatCurrency(totalCurrentAssets)}
+              </div>
+              <div style={{ fontSize: '0.75rem', color: ns.ocean150 }}>
+                Cash: {formatCurrency(balanceSheet.currentAssets.cash)}<br />
+                AR: {formatCurrency(balanceSheet.currentAssets.ar)}<br />
+                Inventory: {formatCurrency(balanceSheet.currentAssets.inventory)}
+              </div>
+            </div>
+          </div>
+          
+          <div style={cardFrame}>
+            <div style={cardInner}>
+              <h4 style={{ color: ns.ocean150, fontSize: '0.875rem', marginBottom: '0.5rem', fontWeight: 600 }}>
+                Current Liabilities
+              </h4>
+              <div style={{ fontSize: '1.5rem', fontWeight: 600, color: ns.ocean180, marginBottom: '0.5rem' }}>
+                {formatCurrency(totalCurrentLiabilities)}
+              </div>
+              <div style={{ fontSize: '0.75rem', color: ns.ocean150 }}>
+                AP: {formatCurrency(balanceSheet.currentLiabilities.ap)}<br />
+                Other: {formatCurrency(balanceSheet.currentLiabilities.other)}
+              </div>
+            </div>
+          </div>
+          
+          <div style={cardFrame}>
+            <div style={cardInner}>
+              <h4 style={{ color: ns.ocean150, fontSize: '0.875rem', marginBottom: '0.5rem', fontWeight: 600 }}>
+                Working Capital
+              </h4>
+              <div style={{ fontSize: '1.5rem', fontWeight: 600, color: ns.mint, marginBottom: '0.5rem' }}>
+                {formatCurrency(totalCurrentAssets - totalCurrentLiabilities)}
+              </div>
+              <div style={{ fontSize: '0.75rem', color: ns.ocean150 }}>
+                Current Ratio: {currentRatio.toFixed(2)}<br />
+                Quick Ratio: {quickRatio.toFixed(2)}
+              </div>
+            </div>
+          </div>
+        </div>
+        
+      </div>
+    </section>
+  )}
+  
+  {/* PROFITABILITY VIEW */}
+  {activeView === 'profitability' && (
+    <section style={{ background: ns.darkBlue, padding: '3rem 2rem' }}>
+      <div style={{ maxWidth: '1400px', margin: '0 auto' }}>
+        
+        <div style={{ display: 'flex', gap: '1rem', marginBottom: '2rem' }}>
+          <div style={{
+            flex: 1,
+            background: ns.green,
+            color: ns.white,
+            padding: '0.75rem 1rem',
+            borderRadius: '4px',
+            fontSize: '0.875rem',
+            fontWeight: 500
+          }}>
+            Germany: Highest margin at {((plData['Germany'].revenue - plData['Germany'].cogs - plData['Germany'].expense) / plData['Germany'].revenue * 100).toFixed(1)}%
+          </div>
+          <div style={{
+            flex: 1,
+            background: ns.teal,
+            color: ns.white,
+            padding: '0.75rem 1rem',
+            borderRadius: '4px',
+            fontSize: '0.875rem',
+            fontWeight: 500
+          }}>
+            Strong gross margins across all operating subsidiaries (63-71%)
+          </div>
+        </div>
+        
+        <h2 style={{ color: ns.white, fontSize: '1.5rem', fontWeight: 600, marginBottom: '1.5rem' }}>
+          Profitability Analysis
+        </h2>
+        
+        {/* Monthly Profitability Trends */}
+        <div style={cardFrame}>
+          <div style={cardInner}>
+            <h3 style={{ color: ns.ocean180, fontSize: '1.125rem', fontWeight: 600, marginBottom: '1rem' }}>
+              Monthly Revenue, COGS, and Expenses
+            </h3>
+            <ResponsiveContainer width="100%" height={300}>
+              <BarChart data={monthlyTrends}>
+                <CartesianGrid strokeDasharray="3 3" stroke={ns.ocean30} />
+                <XAxis dataKey="month" stroke={ns.ocean150} />
+                <YAxis stroke={ns.ocean150} tickFormatter={formatCurrency} />
+                <Tooltip contentStyle={tooltipStyle} formatter={(val) => formatCurrency(val)} />
+                <Legend />
+                <Bar dataKey="revenue" fill={ns.ocean120} name="Revenue" />
+                <Bar dataKey="cogs" fill={ns.coral} name="COGS" />
+                <Bar dataKey="expenses" fill={ns.peach} name="Operating Expenses" />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+        
+        {/* Key Financial Metrics Table */}
+        <div style={cardFrame}>
+          <div style={cardInner}>
+            <h3 style={{ color: ns.ocean180, fontSize: '1.125rem', fontWeight: 600, marginBottom: '1rem' }}>
+              Key Financial Metrics Summary
+            </h3>
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <thead>
+                <tr style={{ background: ns.ocean10 }}>
+                  <th style={{
+                    padding: '1rem',
+                    textAlign: 'left',
+                    fontWeight: 600,
+                    color: ns.ocean150,
+                    borderBottom: `1px solid ${ns.ocean30}`,
+                    fontSize: '0.875rem'
+                  }}>Metric</th>
+                  <th style={{
+                    padding: '1rem',
+                    textAlign: 'right',
+                    fontWeight: 600,
+                    color: ns.ocean150,
+                    borderBottom: `1px solid ${ns.ocean30}`,
+                    fontSize: '0.875rem'
+                  }}>Value</th>
+                  <th style={{
+                    padding: '1rem',
+                    textAlign: 'center',
+                    fontWeight: 600,
+                    color: ns.ocean150,
+                    borderBottom: `1px solid ${ns.ocean30}`,
+                    fontSize: '0.875rem'
+                  }}>Status</th>
+                  <th style={{
+                    padding: '1rem',
+                    textAlign: 'left',
+                    fontWeight: 600,
+                    color: ns.ocean150,
+                    borderBottom: `1px solid ${ns.ocean30}`,
+                    fontSize: '0.875rem'
+                  }}>Benchmark / Target</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr style={{ background: ns.white, borderBottom: `1px solid ${ns.ocean30}` }}>
+                  <td style={{ padding: '1rem', color: ns.ocean180, fontSize: '0.875rem', fontWeight: 600 }}>
+                    Gross Profit Margin
+                  </td>
+                  <td style={{ padding: '1rem', textAlign: 'right', color: ns.ocean150, fontSize: '0.875rem' }}>
+                    {grossMargin.toFixed(1)}%
+                  </td>
+                  <td style={{ padding: '1rem', textAlign: 'center', fontSize: '0.75rem' }}>
+                    <span style={{
+                      padding: '0.25rem 0.75rem',
+                      borderRadius: '16px',
+                      background: ns.mint,
+                      color: ns.white,
+                      fontWeight: 500,
+                      textTransform: 'uppercase',
+                      whiteSpace: 'nowrap',
+                      display: 'inline-block'
+                    }}>EXCELLENT</span>
+                  </td>
+                  <td style={{ padding: '1rem', color: ns.ocean150, fontSize: '0.875rem' }}>
+                    Target: 60-70% for services industry
+                  </td>
+                </tr>
+                <tr style={{ background: ns.ocean10, borderBottom: `1px solid ${ns.ocean30}` }}>
+                  <td style={{ padding: '1rem', color: ns.ocean180, fontSize: '0.875rem', fontWeight: 600 }}>
+                    Net Profit Margin
+                  </td>
+                  <td style={{ padding: '1rem', textAlign: 'right', color: ns.ocean150, fontSize: '0.875rem' }}>
+                    {netMargin.toFixed(1)}%
+                  </td>
+                  <td style={{ padding: '1rem', textAlign: 'center', fontSize: '0.75rem' }}>
+                    <span style={{
+                      padding: '0.25rem 0.75rem',
+                      borderRadius: '16px',
+                      background: ns.mint,
+                      color: ns.white,
+                      fontWeight: 500,
+                      textTransform: 'uppercase',
+                      whiteSpace: 'nowrap',
+                      display: 'inline-block'
+                    }}>STRONG</span>
+                  </td>
+                  <td style={{ padding: '1rem', color: ns.ocean150, fontSize: '0.875rem' }}>
+                    Target: 15-25% for real estate/construction
+                  </td>
+                </tr>
+                <tr style={{ background: ns.white, borderBottom: `1px solid ${ns.ocean30}` }}>
+                  <td style={{ padding: '1rem', color: ns.ocean180, fontSize: '0.875rem', fontWeight: 600 }}>
+                    Current Ratio
+                  </td>
+                  <td style={{ padding: '1rem', textAlign: 'right', color: ns.ocean150, fontSize: '0.875rem' }}>
+                    {currentRatio.toFixed(2)}
+                  </td>
+                  <td style={{ padding: '1rem', textAlign: 'center', fontSize: '0.75rem' }}>
+                    <span style={{
+                      padding: '0.25rem 0.75rem',
+                      borderRadius: '16px',
+                      background: currentRatio >= 2 ? ns.mint : currentRatio >= 1.5 ? ns.sunlight : ns.coral,
+                      color: ns.white,
+                      fontWeight: 500,
+                      textTransform: 'uppercase',
+                      whiteSpace: 'nowrap',
+                      display: 'inline-block'
+                    }}>{currentRatio >= 2 ? 'EXCELLENT' : currentRatio >= 1.5 ? 'GOOD' : 'WEAK'}</span>
+                  </td>
+                  <td style={{ padding: '1rem', color: ns.ocean150, fontSize: '0.875rem' }}>
+                    Target: ≥2.0 for strong liquidity
+                  </td>
+                </tr>
+                <tr style={{ background: ns.ocean10, borderBottom: `1px solid ${ns.ocean30}` }}>
+                  <td style={{ padding: '1rem', color: ns.ocean180, fontSize: '0.875rem', fontWeight: 600 }}>
+                    Quick Ratio
+                  </td>
+                  <td style={{ padding: '1rem', textAlign: 'right', color: ns.ocean150, fontSize: '0.875rem' }}>
+                    {quickRatio.toFixed(2)}
+                  </td>
+                  <td style={{ padding: '1rem', textAlign: 'center', fontSize: '0.75rem' }}>
+                    <span style={{
+                      padding: '0.25rem 0.75rem',
+                      borderRadius: '16px',
+                      background: quickRatio >= 1.5 ? ns.mint : quickRatio >= 1 ? ns.sunlight : ns.coral,
+                      color: ns.white,
+                      fontWeight: 500,
+                      textTransform: 'uppercase',
+                      whiteSpace: 'nowrap',
+                      display: 'inline-block'
+                    }}>{quickRatio >= 1.5 ? 'EXCELLENT' : quickRatio >= 1 ? 'ADEQUATE' : 'WEAK'}</span>
+                  </td>
+                  <td style={{ padding: '1rem', color: ns.ocean150, fontSize: '0.875rem' }}>
+                    Target: ≥1.0 (excludes inventory)
+                  </td>
+                </tr>
+                <tr style={{ background: ns.white, borderBottom: `1px solid ${ns.ocean30}` }}>
+                  <td style={{ padding: '1rem', color: ns.ocean180, fontSize: '0.875rem', fontWeight: 600 }}>
+                    Days Sales Outstanding (DSO)
+                  </td>
+                  <td style={{ padding: '1rem', textAlign: 'right', color: ns.ocean150, fontSize: '0.875rem' }}>
+                    {dso.toFixed(0)} days
+                  </td>
+                  <td style={{ padding: '1rem', textAlign: 'center', fontSize: '0.75rem' }}>
+                    <span style={{
+                      padding: '0.25rem 0.75rem',
+                      borderRadius: '16px',
+                      background: ns.coral,
+                      color: ns.white,
+                      fontWeight: 500,
+                      textTransform: 'uppercase',
+                      whiteSpace: 'nowrap',
+                      display: 'inline-block'
+                    }}>CRITICAL</span>
+                  </td>
+                  <td style={{ padding: '1rem', color: ns.ocean150, fontSize: '0.875rem' }}>
+                    Target: 30-60 days for B2B services
+                  </td>
+                </tr>
+                <tr style={{ background: ns.ocean10, borderBottom: `1px solid ${ns.ocean30}` }}>
+                  <td style={{ padding: '1rem', color: ns.ocean180, fontSize: '0.875rem', fontWeight: 600 }}>
+                    Days Payable Outstanding (DPO)
+                  </td>
+                  <td style={{ padding: '1rem', textAlign: 'right', color: ns.ocean150, fontSize: '0.875rem' }}>
+                    {dpo.toFixed(0)} days
+                  </td>
+                  <td style={{ padding: '1rem', textAlign: 'center', fontSize: '0.75rem' }}>
+                    <span style={{
+                      padding: '0.25rem 0.75rem',
+                      borderRadius: '16px',
+                      background: ns.coral,
+                      color: ns.white,
+                      fontWeight: 500,
+                      textTransform: 'uppercase',
+                      whiteSpace: 'nowrap',
+                      display: 'inline-block'
+                    }}>HIGH</span>
+                  </td>
+                  <td style={{ padding: '1rem', color: ns.ocean150, fontSize: '0.875rem' }}>
+                    Target: 45-60 days optimal
+                  </td>
+                </tr>
+                <tr style={{ background: ns.white, borderBottom: `1px solid ${ns.ocean30}` }}>
+                  <td style={{ padding: '1rem', color: ns.ocean180, fontSize: '0.875rem', fontWeight: 600 }}>
+                    Monthly Burn Rate
+                  </td>
+                  <td style={{ padding: '1rem', textAlign: 'right', color: ns.ocean150, fontSize: '0.875rem' }}>
+                    {formatCurrency(burnRate)}
+                  </td>
+                  <td style={{ padding: '1rem', textAlign: 'center', fontSize: '0.75rem' }}>
+                    <span style={{
+                      padding: '0.25rem 0.75rem',
+                      borderRadius: '16px',
+                      background: ns.teal,
+                      color: ns.white,
+                      fontWeight: 500,
+                      textTransform: 'uppercase',
+                      whiteSpace: 'nowrap',
+                      display: 'inline-block'
+                    }}>TRACKED</span>
+                  </td>
+                  <td style={{ padding: '1rem', color: ns.ocean150, fontSize: '0.875rem' }}>
+                    Average monthly operating expenses
+                  </td>
+                </tr>
+                <tr style={{ background: ns.ocean10 }}>
+                  <td style={{ padding: '1rem', color: ns.ocean180, fontSize: '0.875rem', fontWeight: 600 }}>
+                    Cash Runway
+                  </td>
+                  <td style={{ padding: '1rem', textAlign: 'right', color: ns.ocean150, fontSize: '0.875rem' }}>
+                    {runway.toFixed(1)} months
+                  </td>
+                  <td style={{ padding: '1rem', textAlign: 'center', fontSize: '0.75rem' }}>
+                    <span style={{
+                      padding: '0.25rem 0.75rem',
+                      borderRadius: '16px',
+                      background: runway >= 12 ? ns.mint : runway >= 6 ? ns.sunlight : ns.coral,
+                      color: ns.white,
+                      fontWeight: 500,
+                      textTransform: 'uppercase',
+                      whiteSpace: 'nowrap',
+                      display: 'inline-block'
+                    }}>{runway >= 12 ? 'STRONG' : runway >= 6 ? 'ADEQUATE' : 'RISK'}</span>
+                  </td>
+                  <td style={{ padding: '1rem', color: ns.ocean150, fontSize: '0.875rem' }}>
+                    Months of operations at current burn
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        
+      </div>
+    </section>
+  )}
+  
+  {/* RECOMMENDATIONS SECTION - Light Blue */}
+  <section style={{ background: ns.lightBlue, padding: '3rem 2rem' }}>
+    <div style={{ maxWidth: '1400px', margin: '0 auto' }}>
+      <h2 style={{ color: ns.ocean180, fontSize: '1.5rem', fontWeight: 600, marginBottom: '1.5rem' }}>
+        Strategic Recommendations for FY2026
+      </h2>
+      
+      <div style={{ display: 'grid', gap: '1.5rem', gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))' }}>
+        
+        {/* CRITICAL: Collections */}
+        <div style={cardFrame}>
+          <div style={cardInner}>
+            <div style={{
+              padding: '0.5rem 1rem',
+              borderRadius: '8px',
+              background: ns.coral,
+              color: ns.white,
+              fontWeight: 600,
+              fontSize: '0.875rem',
+              marginBottom: '1rem',
+              display: 'inline-block'
+            }}>
+              🚨 CRITICAL PRIORITY
+            </div>
+            <h3 style={{ color: ns.ocean180, fontSize: '1.125rem', fontWeight: 600, marginBottom: '0.75rem' }}>
+              Accelerate AR Collections
+            </h3>
+            <div style={{ color: ns.ocean150, fontSize: '0.875rem', lineHeight: '1.6' }}>
+              <strong>Issue:</strong> $22.8M (62%) of AR is 60+ days overdue. DSO of 489 days is critical.<br /><br />
+              <strong>Actions:</strong><br />
+              • Implement aggressive collections program for 60+ day accounts<br />
+              • Require deposits or milestone payments for new projects<br />
+              • Consider factoring or AR financing for immediate cash<br />
+              • Review credit terms and enforce payment schedules<br />
+              • Target DSO reduction to 60 days (industry standard)<br /><br />
+              <strong>Impact:</strong> Reducing DSO to 60 days would free up $26M in working capital
+            </div>
+          </div>
+        </div>
+        
+        {/* Germany Expansion */}
+        <div style={cardFrame}>
+          <div style={cardInner}>
+            <div style={{
+              padding: '0.5rem 1rem',
+              borderRadius: '8px',
+              background: ns.mint,
+              color: ns.white,
+              fontWeight: 600,
+              fontSize: '0.875rem',
+              marginBottom: '1rem',
+              display: 'inline-block'
+            }}>
+              💡 GROWTH OPPORTUNITY
+            </div>
+            <h3 style={{ color: ns.ocean180, fontSize: '1.125rem', fontWeight: 600, marginBottom: '0.75rem' }}>
+              Scale Germany Operations
+            </h3>
+            <div style={{ color: ns.ocean150, fontSize: '0.875rem', lineHeight: '1.6' }}>
+              <strong>Insight:</strong> Germany delivers highest net margin (67.4%) vs US West (31.7%)<br /><br />
+              <strong>Actions:</strong><br />
+              • Increase Germany headcount and project capacity<br />
+              • Replicate Germany's cost structure to other subsidiaries<br />
+              • Study Germany's vendor relationships and pricing power<br />
+              • Consider Germany as hub for EU expansion<br /><br />
+              <strong>Target:</strong> Grow Germany revenue from $9.6M to $15M+ in FY2026
+            </div>
+          </div>
+        </div>
+        
+        {/* Optimize AP */}
+        <div style={cardFrame}>
+          <div style={cardInner}>
+            <div style={{
+              padding: '0.5rem 1rem',
+              borderRadius: '8px',
+              background: ns.sunlight,
+              color: ns.ocean180,
+              fontWeight: 600,
+              fontSize: '0.875rem',
+              marginBottom: '1rem',
+              display: 'inline-block'
+            }}>
+              ⚠️ PROCESS IMPROVEMENT
+            </div>
+            <h3 style={{ color: ns.ocean180, fontSize: '1.125rem', fontWeight: 600, marginBottom: '0.75rem' }}>
+              Optimize Payables Management
+            </h3>
+            <div style={{ color: ns.ocean150, fontSize: '0.875rem', lineHeight: '1.6' }}>
+              <strong>Issue:</strong> DPO of 627 days indicates payment delays. $12.5M overdue 60+ days.<br /><br />
+              <strong>Actions:</strong><br />
+              • Negotiate early payment discounts (2/10 net 30 terms)<br />
+              • Centralize AP to capture volume discounts<br />
+              • Automate payment scheduling to avoid late fees<br />
+              • Maintain vendor relationships with strategic payments<br /><br />
+              <strong>Target:</strong> Reduce DPO to 45-60 days while capturing 2% discounts
+            </div>
+          </div>
+        </div>
+        
+        {/* Revenue Quality */}
+        <div style={cardFrame}>
+          <div style={cardInner}>
+            <div style={{
+              padding: '0.5rem 1rem',
+              borderRadius: '8px',
+              background: ns.teal,
+              color: ns.white,
+              fontWeight: 600,
+              fontSize: '0.875rem',
+              marginBottom: '1rem',
+              display: 'inline-block'
+            }}>
+              📊 STRATEGIC INITIATIVE
+            </div>
+            <h3 style={{ color: ns.ocean180, fontSize: '1.125rem', fontWeight: 600, marginBottom: '0.75rem' }}>
+              Improve Revenue Predictability
+            </h3>
+            <div style={{ color: ns.ocean150, fontSize: '0.875rem', lineHeight: '1.6' }}>
+              <strong>Observation:</strong> Revenue volatility increased significantly Q3-Q4 2025<br /><br />
+              <strong>Actions:</strong><br />
+              • Shift to milestone-based billing for construction projects<br />
+              • Implement percentage-of-completion revenue recognition<br />
+              • Require larger upfront deposits (30-40% vs current)<br />
+              • Build recurring service/maintenance contracts<br /><br />
+              <strong>Target:</strong> 60% of revenue from contracted/recurring sources by end of FY2026
+            </div>
+          </div>
+        </div>
+        
+        {/* Cost Control - US West */}
+        <div style={cardFrame}>
+          <div style={cardInner}>
+            <div style={{
+              padding: '0.5rem 1rem',
+              borderRadius: '8px',
+              background: ns.sunlight,
+              color: ns.ocean180,
+              fontWeight: 600,
+              fontSize: '0.875rem',
+              marginBottom: '1rem',
+              display: 'inline-block'
+            }}>
+              📉 MARGIN IMPROVEMENT
+            </div>
+            <h3 style={{ color: ns.ocean180, fontSize: '1.125rem', fontWeight: 600, marginBottom: '0.75rem' }}>
+              Address US West COGS &amp; Expense Structure
+            </h3>
+            <div style={{ color: ns.ocean150, fontSize: '0.875rem', lineHeight: '1.6' }}>
+              <strong>Issue:</strong> US West COGS at 41.9% vs Germany 29.2% on similar revenue base<br /><br />
+              <strong>Actions:</strong><br />
+              • Review US West vendor contracts vs Germany pricing<br />
+              • Analyze labor cost differences (direct vs subcontractor mix)<br />
+              • Implement value engineering on high-COGS projects<br />
+              • Cross-train teams to reduce reliance on expensive specialists<br /><br />
+              <strong>Target:</strong> Reduce US West COGS ratio from 42% to 35%, adding $700K+ to bottom line
+            </div>
+          </div>
+        </div>
+        
+        {/* Cash Reserves */}
+        <div style={cardFrame}>
+          <div style={cardInner}>
+            <div style={{
+              padding: '0.5rem 1rem',
+              borderRadius: '8px',
+              background: ns.green,
+              color: ns.white,
+              fontWeight: 600,
+              fontSize: '0.875rem',
+              marginBottom: '1rem',
+              display: 'inline-block'
+            }}>
+              ✅ MAINTAIN STRENGTH
+            </div>
+            <h3 style={{ color: ns.ocean180, fontSize: '1.125rem', fontWeight: 600, marginBottom: '0.75rem' }}>
+              Preserve Cash Reserves
+            </h3>
+            <div style={{ color: ns.ocean150, fontSize: '0.875rem', lineHeight: '1.6' }}>
+              <strong>Status:</strong> Strong cash position of $7.6M with 13.7-month runway<br /><br />
+              <strong>Actions:</strong><br />
+              • Maintain minimum cash reserve of $4M (7 months runway)<br />
+              • Invest excess cash in short-term treasuries or money market<br />
+              • Establish credit line for project funding flexibility<br />
+              • Monitor cash conversion cycle weekly<br /><br />
+              <strong>Target:</strong> Build to 18-month runway ($10M cash) by end of FY2026
+            </div>
+          </div>
+        </div>
+        
+      </div>
+    </div>
+  </section>
+  
+  {/* KEY INSIGHTS SUMMARY - Dark Blue */}
+  <section style={{ background: ns.darkBlue, padding: '3rem 2rem' }}>
+    <div style={{ maxWidth: '1400px', margin: '0 auto' }}>
+      
+      <div style={{ display: 'flex', gap: '1rem', marginBottom: '2rem' }}>
+        <div style={{
+          flex: 1,
+          background: ns.rust,
+          color: ns.white,
+          padding: '0.75rem 1rem',
+          borderRadius: '4px',
+          fontSize: '0.875rem',
+          fontWeight: 500
+        }}>
+          Urgent: Collections backlog threatening working capital
+        </div>
+        <div style={{
+          flex: 1,
+          background: ns.green,
+          color: ns.white,
+          padding: '0.75rem 1rem',
+          borderRadius: '4px',
+          fontSize: '0.875rem',
+          fontWeight: 500
+        }}>
+          Strength: Healthy profitability and strong gross margins
+        </div>
+      </div>
+      
+      <h2 style={{ color: ns.white, fontSize: '1.5rem', fontWeight: 600, marginBottom: '1.5rem' }}>
+        Executive Summary &amp; Action Plan
+      </h2>
+      
+      <div style={cardFrame}>
+        <div style={cardInner}>
+          <h3 style={{ color: ns.ocean180, fontSize: '1.125rem', fontWeight: 600, marginBottom: '1rem' }}>
+            Overall Financial Health: STRONG with CRITICAL Collections Issue
+          </h3>
+          
+          <div style={{ marginBottom: '2rem' }}>
+            <h4 style={{ color: ns.ocean180, fontSize: '1rem', fontWeight: 600, marginBottom: '0.75rem' }}>
+              💪 Key Strengths
+            </h4>
+            <div style={{ color: ns.ocean150, fontSize: '0.875rem', lineHeight: '1.8' }}>
+              • <strong>Strong Profitability:</strong> 62.8% gross margin and 38.7% net margin significantly exceed industry benchmarks<br />
+              • <strong>Revenue Growth:</strong> Total revenue $27.6M over 13 months with sustained momentum in Q3-Q4 2025<br />
+              • <strong>Cash Position:</strong> $7.6M in cumulative cash provides substantial operating buffer<br />
+              • <strong>Germany Performance:</strong> Best-in-class 67.4% net margin demonstrates scalable model<br />
+              • <strong>Liquidity Ratios:</strong> Current ratio 8.0 and quick ratio 7.9 indicate excellent ability to meet obligations
+            </div>
+          </div>
+          
+          <div style={{ marginBottom: '2rem' }}>
+            <h4 style={{ color: ns.coral, fontSize: '1rem', fontWeight: 600, marginBottom: '0.75rem' }}>
+              🚨 Critical Issues Requiring Immediate Action
+            </h4>
+            <div style={{ color: ns.ocean150, fontSize: '0.875rem', lineHeight: '1.8' }}>
+              • <strong>AR Collections Crisis:</strong> $22.8M (62%) of receivables are 60+ days overdue - 305 days of revenue locked up<br />
+              • <strong>Extreme DSO:</strong> 489 days sales outstanding vs 30-60 day industry standard threatens cash flow<br />
+              • <strong>Vendor Payment Delays:</strong> DPO of 627 days may damage supplier relationships and credit terms<br />
+              • <strong>US West Cost Structure:</strong> COGS 42% vs Germany 29% indicates operational inefficiency
+            </div>
+          </div>
+          
+          <div>
+            <h4 style={{ color: ns.ocean180, fontSize: '1rem', fontWeight: 600, marginBottom: '0.75rem' }}>
+              📋 Immediate Action Plan (Next 90 Days)
+            </h4>
+            <div style={{ color: ns.ocean150, fontSize: '0.875rem', lineHeight: '1.8' }}>
+              <strong>1. Launch Emergency Collections Initiative (Week 1-2)</strong><br />
+              • Dedicate FTE to manage 60+ day AR accounts<br />
+              • Offer payment plans to convert aged AR to cash<br />
+              • Legal action for accounts >180 days without payment plan<br /><br />
+              
+              <strong>2. Implement New Project Billing Policy (Week 3-4)</strong><br />
+              • 30% deposit required on all new construction contracts<br />
+              • Monthly progress billing based on % completion<br />
+              • Final 10% retention released within 30 days of completion<br /><br />
+              
+              <strong>3. Cost Structure Benchmarking (Month 2)</strong><br />
+              • Full analysis of Germany vs US West COGS drivers<br />
+              • Vendor price comparison and renegotiation<br />
+              • Labor mix optimization study<br /><br />
+              
+              <strong>4. Working Capital Optimization (Month 3)</strong><br />
+              • Establish $10M credit line for project funding flexibility<br />
+              • Negotiate early payment discounts with key vendors<br />
+              • Implement weekly cash flow forecasting
+            </div>
+          </div>
+        </div>
+      </div>
+      
+    </div>
+  </section>
+  
+  {/* FOOTER NOTE */}
+  <section style={{ background: ns.lightBlue, padding: '2rem', borderTop: `1px solid ${ns.ocean30}` }}>
+    <div style={{ maxWidth: '1400px', margin: '0 auto', textAlign: 'center' }}>
+      <div style={{ color: ns.ocean150, fontSize: '0.875rem' }}>
+        <strong>Data Period:</strong> November 1, 2024 - November 12, 2025 (13 months) | 
+        <strong> Analysis Date:</strong> November 12, 2025 | 
+        <strong> Next Review:</strong> End of Q4 FY2025
+      </div>
+    </div>
+  </section>
+  
+</div>
+
+);
+};
+
+
+    ReactDOM.createRoot(document.getElementById('root')).render(
+      React.createElement(FinancialDashboard, null)
+    );
+  </script>
+</body>
+</html>
